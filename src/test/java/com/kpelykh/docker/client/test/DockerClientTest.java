@@ -1,39 +1,60 @@
 package com.kpelykh.docker.client.test;
 
-import com.kpelykh.docker.client.DockerClient;
-import com.kpelykh.docker.client.DockerException;
-import com.kpelykh.docker.client.model.*;
+import static ch.lambdaj.Lambda.filter;
+import static ch.lambdaj.Lambda.selectUnique;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isEmptyString;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.startsWith;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.testinfected.hamcrest.jpa.HasFieldWithValue.hasField;
 
-import com.sun.jersey.api.client.ClientResponse;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.LineIterator;
-import org.apache.commons.lang.StringUtils;
-import org.hamcrest.Matcher;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.testng.Assert;
-import org.testng.ITestResult;
-import org.testng.annotations.*;
-
-import java.io.*;
-import java.lang.reflect.Method;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.List;
 
-import static ch.lambdaj.Lambda.filter;
-import static ch.lambdaj.Lambda.selectUnique;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.hamcrest.Matchers.hasItem;
-import static org.testinfected.hamcrest.jpa.HasFieldWithValue.hasField;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.LineIterator;
+import org.apache.commons.lang.StringUtils;
+import org.hamcrest.Matcher;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.kpelykh.docker.client.DockerClient;
+import com.kpelykh.docker.client.DockerException;
+import com.kpelykh.docker.client.model.ChangeLog;
+import com.kpelykh.docker.client.model.CommitConfig;
+import com.kpelykh.docker.client.model.Container;
+import com.kpelykh.docker.client.model.ContainerConfig;
+import com.kpelykh.docker.client.model.ContainerCreateResponse;
+import com.kpelykh.docker.client.model.ContainerInspectResponse;
+import com.kpelykh.docker.client.model.Image;
+import com.kpelykh.docker.client.model.ImageInspectResponse;
+import com.kpelykh.docker.client.model.Info;
+import com.kpelykh.docker.client.model.SearchItem;
+import com.kpelykh.docker.client.model.Version;
+import com.sun.jersey.api.client.ClientResponse;
 
 /**
  * Unit test for DockerClient.
  * @author Konstantin Pelykh (kpelykh@gmail.com)
  */
-public class DockerClientTest extends Assert
+public class DockerClientTest
 {
     public static final Logger LOG = LoggerFactory.getLogger(DockerClientTest.class);
 
@@ -42,31 +63,16 @@ public class DockerClientTest extends Assert
     private List<String> tmpImgs = new ArrayList<String>();
     private List<String> tmpContainers = new ArrayList<String>();
 
-    @BeforeTest
-    public void beforeTest() throws DockerException {
-        LOG.info("======================= BEFORETEST =======================");
+    @Before
+    public void beforeMethod() throws DockerException {
         LOG.info("Connecting to Docker server at http://localhost:4243");
         dockerClient = new DockerClient("http://localhost:4243");
         LOG.info("Creating image 'busybox'");
-
         dockerClient.pull("busybox");
-
-        assertNotNull(dockerClient);
-        LOG.info("======================= END OF BEFORETEST =======================\n\n");
     }
 
-    @AfterTest
-    public void afterTest() {
-        LOG.info("======================= END OF AFTERTEST =======================");
-    }
-
-    @BeforeMethod
-    public void beforeMethod(Method method) {
-        LOG.info(String.format("################################## STARTING %s ##################################", method.getName()));
-    }
-
-    @AfterMethod
-    public void afterMethod(ITestResult result) {
+    @After
+    public void afterMethod() {
         for (String image : tmpImgs) {
             LOG.info("Cleaning up temporary image " + image);
             try {
@@ -80,7 +86,7 @@ public class DockerClientTest extends Assert
                 dockerClient.removeContainer(container);
             } catch (DockerException ignore) {}
         }
-        LOG.info(String.format("################################## END OF %s ##################################\n", result.getName()));
+        LOG.info(String.format("################################## END ##################################\n"));
     }
 
     /*
