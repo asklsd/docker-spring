@@ -32,8 +32,12 @@ import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.kpelykh.docker.client.DockerClient;
 import com.kpelykh.docker.client.DockerException;
@@ -54,10 +58,13 @@ import com.sun.jersey.api.client.ClientResponse;
  * Unit test for DockerClient.
  * @author Konstantin Pelykh (kpelykh@gmail.com)
  */
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations = { "SimpleServiceTest-context.xml" })
 public class DockerClientTest
 {
     public static final Logger LOG = LoggerFactory.getLogger(DockerClientTest.class);
 
+    @Autowired
     private DockerClient dockerClient;
 
     private List<String> tmpImgs = new ArrayList<String>();
@@ -65,8 +72,6 @@ public class DockerClientTest
 
     @Before
     public void beforeMethod() throws DockerException {
-        LOG.info("Connecting to Docker server at http://localhost:4243");
-        dockerClient = new DockerClient("http://localhost:4243");
         LOG.info("Creating image 'busybox'");
         dockerClient.pull("busybox");
     }
