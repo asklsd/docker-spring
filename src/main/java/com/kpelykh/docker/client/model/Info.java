@@ -30,7 +30,6 @@ public class Info {
     @JsonProperty("LXCVersion")
     public String lxcVersion;
 
-
     @JsonProperty("NEventsListener")
     public long nEventListener;
 

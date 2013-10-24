@@ -28,10 +28,22 @@ public class Container {
     public String ports;   //Example value "49164->6900, 49165->7100"
 
     @JsonProperty("SizeRw")
-    public int size;
+    public int sizeRw;
 
+    @JsonProperty("Size")
+    public int size;
+    
+    @JsonProperty("VirtualSize")
+    public int virtualSize;
+    
     @JsonProperty("SizeRootFs")
     public int sizeRootFs;
+
+    @JsonProperty("Repository")
+    public String repository;
+
+    @JsonProperty("Tag")
+    public String tag;
 
     @Override
     public String toString() {
@@ -42,8 +54,12 @@ public class Container {
                 ", created=" + created +
                 ", status='" + status + '\'' +
                 ", ports=" + ports +
+                ", sizeRw=" + sizeRw +
                 ", size=" + size +
+                ", virtualSize=" + virtualSize +
                 ", sizeRootFs=" + sizeRootFs +
+                ", repository=" + repository +
+                ", tag=" + tag +
                 '}';
     }
 }

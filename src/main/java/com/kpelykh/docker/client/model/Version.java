@@ -9,7 +9,6 @@ import org.codehaus.jackson.annotate.JsonProperty;
  */
 public class Version {
 
-
     @JsonProperty("Version")
     public String version;
 
@@ -18,7 +17,6 @@ public class Version {
 
     @JsonProperty("GoVersion")
     public String  goVersion;
-
 
     @Override
     public String toString() {

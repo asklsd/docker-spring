@@ -1,36 +1,52 @@
 package com.kpelykh.docker.client;
 
-import com.google.common.base.Preconditions;
-import com.kpelykh.docker.client.model.*;
-import com.kpelykh.docker.client.utils.CompressArchiveUtil;
-import com.kpelykh.docker.client.utils.JsonClientFilter;
-import com.sun.jersey.api.client.*;
-import com.sun.jersey.api.client.WebResource.Builder;
-import com.sun.jersey.api.client.config.ClientConfig;
-import com.sun.jersey.api.client.config.DefaultClientConfig;
-import com.sun.jersey.api.json.JSONConfiguration;
-import com.sun.jersey.client.apache4.ApacheHttpClient4;
-import com.sun.jersey.client.apache4.ApacheHttpClient4Handler;
-import com.sun.jersey.core.util.MultivaluedMapImpl;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.client.HttpClient;
-import org.apache.http.conn.scheme.PlainSocketFactory;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.PoolingClientConnectionManager;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
+import org.codehaus.jackson.JsonParseException;
+import org.codehaus.jackson.annotate.JsonProperty;
+import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.ResponseExtractor;
+import org.springframework.web.client.RestTemplate;
 
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.util.UUID;
+import com.google.common.base.Preconditions;
+import com.kpelykh.docker.client.model.ChangeLog;
+import com.kpelykh.docker.client.model.CommitConfig;
+import com.kpelykh.docker.client.model.Container;
+import com.kpelykh.docker.client.model.ContainerConfig;
+import com.kpelykh.docker.client.model.ContainerCreateResponse;
+import com.kpelykh.docker.client.model.ContainerInspectResponse;
+import com.kpelykh.docker.client.model.ContainerWaitResponse;
+import com.kpelykh.docker.client.model.HostConfig;
+import com.kpelykh.docker.client.model.Image;
+import com.kpelykh.docker.client.model.ImageInspectResponse;
+import com.kpelykh.docker.client.model.Info;
+import com.kpelykh.docker.client.model.SearchItem;
+import com.kpelykh.docker.client.model.Version;
+import com.kpelykh.docker.client.utils.CompressArchiveUtil;
 
 /**
  *
@@ -42,82 +58,40 @@ public class DockerClient
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DockerClient.class);
 
-    private static DockerClient instance;
-    private Client client;
+    private RestTemplate restTemplate;
+
     private String restEndpointUrl;
 
     public DockerClient(String serverUrl) {
-        restEndpointUrl = serverUrl + "/v1.3";
-        ClientConfig clientConfig = new DefaultClientConfig();
-        clientConfig.getFeatures().put(JSONConfiguration.FEATURE_POJO_MAPPING, Boolean.TRUE);
-
-        SchemeRegistry schemeRegistry = new SchemeRegistry();
-        schemeRegistry.register(new Scheme("http", 4243, PlainSocketFactory.getSocketFactory()));
-
-        PoolingClientConnectionManager cm = new PoolingClientConnectionManager(schemeRegistry);
-        // Increase max total connection
-        cm.setMaxTotal(1000);
-        // Increase default max connection per route
-        cm.setDefaultMaxPerRoute(1000);
-
-        HttpClient httpClient = new DefaultHttpClient(cm);
-        client = new ApacheHttpClient4(new ApacheHttpClient4Handler(httpClient, null, false), clientConfig);
-
-        client.addFilter(new JsonClientFilter());
-        //client.addFilter(new LoggingFilter());
+        restEndpointUrl = serverUrl;
+        restTemplate = new RestTemplate();
     }
 
     /**
      ** MISC API
-     **
      **/
 
     public Info info() throws DockerException {
-        WebResource webResource = client.resource(restEndpointUrl + "/info");
-
-        try {
-            LOGGER.trace("GET: " + webResource.toString());
-            return webResource.accept(MediaType.APPLICATION_JSON).get(Info.class);
-        } catch (UniformInterfaceException exception) {
-            if (exception.getResponse().getStatus() == 500) {
-                throw new DockerException("Server error.", exception);
-            } else {
-                throw new DockerException(exception);
-            }
-        }
+		return restTemplate.getForObject(restEndpointUrl + "/info", Info.class);
     }
-
 
     public Version version() throws DockerException {
-        WebResource webResource = client.resource(restEndpointUrl + "/version");
-
-        try {
-            LOGGER.trace("GET: " + webResource.toString());
-            return webResource.accept(MediaType.APPLICATION_JSON).get(Version.class);
-        } catch (UniformInterfaceException exception) {
-            if (exception.getResponse().getStatus() == 500) {
-                throw new DockerException("Server error.", exception);
-            } else {
-                throw new DockerException(exception);
-            }
-        }
+    	return restTemplate.getForObject(restEndpointUrl + "/version", Version.class);
     }
-
 
     /**
-     ** IMAGE API
-     **
+     ** IMAGES API
      **/
 
-    public ClientResponse pull(String repository) throws DockerException {
-        return this.pull(repository, null, null);
+    public void pull(String repository) throws DockerException {
+        this.pull(repository, null, null);
     }
 
-    public ClientResponse pull(String repository, String tag) throws DockerException {
-        return this.pull(repository, tag, null);
+    public void pull(String repository, String tag) throws DockerException {
+        this.pull(repository, tag, null);
     }
 
-    public ClientResponse pull(String repository, String tag, String registry) throws DockerException {
+    public void pull(String repository, String tag, String registry) throws DockerException {
         Preconditions.checkNotNull(repository, "Repository was not specified");
 
         if (StringUtils.countMatches(repository, ":") == 1) {
@@ -127,61 +101,32 @@ public class DockerClient
 
         }
 
-        MultivaluedMap<String,String> params = new MultivaluedMapImpl();
-        params.add("tag", tag);
-        params.add("fromImage", repository);
-        params.add("registry", registry);
+        Map<String,String> params = new HashMap<String, String>();
+        params.put("tag", tag);
+        params.put("fromImage", repository);
+        params.put("registry", registry);
 
-        WebResource webResource = client.resource(restEndpointUrl + "/images/create").queryParams(params);
-
-        try {
-            LOGGER.trace("POST: " + webResource.toString());
-            return webResource.accept(MediaType.APPLICATION_OCTET_STREAM_TYPE).post(ClientResponse.class);
-        } catch (UniformInterfaceException exception) {
-            if (exception.getResponse().getStatus() == 500) {
-                throw new DockerException("Server error.", exception);
-            } else {
-                throw new DockerException(exception);
-            }
-        }
+        restTemplate.exchange(restEndpointUrl
+				+ "/images/create?tag={tag}&fromImage={fromImage}&registry={registry}", HttpMethod.POST, null, String.class, params);
     }
 
     public List<SearchItem> search(String search) throws DockerException {
-        WebResource webResource = client.resource(restEndpointUrl + "/images/search").queryParam("term", search);
-        try {
-            return webResource.accept(MediaType.APPLICATION_JSON).get(new GenericType<List<SearchItem>>() {});
-        } catch (UniformInterfaceException exception) {
-            if (exception.getResponse().getStatus() == 500) {
-                throw new DockerException("Server error.", exception);
-            } else {
-                throw new DockerException(exception);
-            }
-        }
-
+		SearchItem[] response = restTemplate.getForObject(restEndpointUrl + "/images/search?term={search}", SearchItem[].class, search);
+		return Arrays.asList(response);
     }
 
     public void removeImage(String imageId) throws DockerException {
         Preconditions.checkState(!StringUtils.isEmpty(imageId), "Image ID can't be empty");
 
-        try {
-            WebResource webResource = client.resource(restEndpointUrl + "/images/" + imageId);
-            LOGGER.trace("DELETE: " + webResource.toString());
-            webResource.delete();
-        } catch (UniformInterfaceException exception) {
-            if (exception.getResponse().getStatus() == 204) {
-                //no error
-                LOGGER.trace("Successfully removed image " + imageId);
-            } else if (exception.getResponse().getStatus() == 404) {
-                LOGGER.warn(String.format("%s no such image", imageId));
-            } else if (exception.getResponse().getStatus() == 409) {
-                throw new DockerException("Conflict");
-            } else if (exception.getResponse().getStatus() == 500) {
-                throw new DockerException("Server error.", exception);
-            } else {
-                throw new DockerException(exception);
-            }
-        }
-
+		try {
+			restTemplate.delete(restEndpointUrl + "/images/{imageId}", imageId);
+		} catch (HttpClientErrorException e) {
+			if (e.getStatusCode().equals(HttpStatus.NOT_FOUND)) {
+	            LOGGER.warn("Ignoring deletion of non existing image {}", imageId);
+	            return;
+			}
+			throw e;
+		}
     }
 
     public void removeImages(List<String> images) throws DockerException {
@@ -193,25 +138,8 @@ public class DockerClient
     }
 
     public String getVizImages() throws DockerException {
-        WebResource webResource = client.resource(restEndpointUrl + "/images/viz");
-
-        try {
-            LOGGER.trace("GET: " + webResource.toString());
-            String response = webResource.get(String.class);
-            LOGGER.trace("Response:" + response.toString());
-
-            return response;
-        } catch (UniformInterfaceException exception) {
-            if (exception.getResponse().getStatus() == 400) {
-                throw new DockerException("bad parameter");
-            } else if (exception.getResponse().getStatus() == 500) {
-                throw new DockerException("Server error", exception);
-            } else {
-                throw new DockerException(exception);
-            }
-        }
+		return restTemplate.getForObject(restEndpointUrl + "/images/viz", String.class);
     }
-
 
     public List<Image> getImages() throws DockerException {
         return this.getImages(null, false);
@@ -226,112 +154,46 @@ public class DockerClient
     }
 
     public List<Image> getImages(String name, boolean allImages) throws DockerException {
+    	Map<String,String> params = new HashMap<String, String>();
+    	params.put("filter", name);
+    	params.put("all", allImages ? "1" : "0");
 
-        MultivaluedMap<String,String> params = new MultivaluedMapImpl();
-        params.add("filter", name);
-        params.add("all", allImages ? "1" : "0");
-
-        WebResource webResource = client.resource(restEndpointUrl + "/images/json").queryParams(params);
-
-        try {
-            LOGGER.trace("GET: " + webResource.toString());
-            List<Image> images = webResource.accept(MediaType.APPLICATION_JSON).get(new GenericType<List<Image>>() {});
-            LOGGER.trace("Response:" + images.toString());
-            return images;
-        } catch (UniformInterfaceException exception) {
-            if (exception.getResponse().getStatus() == 400) {
-                throw new DockerException("bad parameter");
-            } else if (exception.getResponse().getStatus() == 500) {
-                throw new DockerException("Server error", exception);
-            } else {
-                throw new DockerException();
-            }
-        }
-
+    	Image[] response = restTemplate.getForObject(restEndpointUrl + "/images/json?filter={filter}&all={all}",
+				Image[].class, params);
+		return Arrays.asList(response);
     }
 
     public ImageInspectResponse inspectImage(String imageId) throws DockerException {
-
-        WebResource webResource = client.resource(restEndpointUrl + String.format("/images/%s/json", imageId));
-
-        try {
-            LOGGER.trace("GET: " + webResource.toString());
-            return webResource.accept(MediaType.APPLICATION_JSON).get(ImageInspectResponse.class);
-        } catch (UniformInterfaceException exception) {
-            if (exception.getResponse().getStatus() == 404) {
-                throw new DockerException(String.format("No such image %s", imageId));
-            } else if (exception.getResponse().getStatus() == 500) {
-                throw new DockerException("Server error", exception);
-            } else {
-                throw new DockerException(exception);
-            }
-        }
+		return restTemplate.getForObject(restEndpointUrl + "/images/{imageId}/json",
+				ImageInspectResponse.class, imageId);
     }
 
     /**
-     ** CONTAINER API
-     **
+     ** CONTAINERS API
      **/
 
-    public List<Container> listContainers(boolean allContainers) {
-        return this.listContainers(allContainers, false, -1, false, null, null);
+    public List<Container> listContainers(boolean listAll) {
+		Container[] response = restTemplate.getForObject(restEndpointUrl + "/containers/json?all={all}", Container[].class, listAll);
+		return Arrays.asList(response);
     }
-
-    public List<Container> listContainers(boolean allContainers, boolean latest) {
-        return this.listContainers(allContainers, latest, -1, false, null, null);
-    }
-
-    public List<Container> listContainers(boolean allContainers, boolean latest, int limit) {
-        return this.listContainers(allContainers, latest, limit, false, null, null);
-    }
-
-    public List<Container> listContainers(boolean allContainers, boolean latest, int limit, boolean showSize) {
-        return this.listContainers(allContainers, latest, limit, showSize, null, null);
-    }
-
-    public List<Container> listContainers(boolean allContainers, boolean latest, int limit, boolean showSize, String since) {
-        return this.listContainers(allContainers, latest, limit, false, since, null);
-    }
-
-    public List<Container> listContainers(boolean allContainers, boolean latest, int limit, boolean showSize, String since, String before) {
-
-        MultivaluedMap<String,String> params = new MultivaluedMapImpl();
-        params.add("limit", latest ? "1" : String.valueOf(limit));
-        params.add("all", allContainers ? "1" : "0");
-        params.add("since", since);
-        params.add("before", before);
-        params.add("size", showSize ? "1" : "0");
-
-        WebResource webResource = client.resource(restEndpointUrl + "/containers/json").queryParams(params);
-        LOGGER.trace("GET: " + webResource.toString());
-        List<Container> containers = webResource.accept(MediaType.APPLICATION_JSON).get(new GenericType<List<Container>>() {});
-        LOGGER.trace("Response:" + containers.toString());
-
-        return containers;
-    }
-
 
     public ContainerCreateResponse createContainer(ContainerConfig config) throws DockerException {
+    	final HttpHeaders requestHeaders = new HttpHeaders();
+    	requestHeaders.setContentType(MediaType.APPLICATION_JSON);
+    	requestHeaders.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+    	final HttpEntity<ContainerConfig> requestEntity = new HttpEntity<ContainerConfig>(config, requestHeaders);
 
-        WebResource webResource = client.resource(restEndpointUrl + "/containers/create");
-
-        try {
-            LOGGER.trace("POST: " + webResource.toString());
-            return webResource.accept(MediaType.APPLICATION_JSON)
-                   .type(MediaType.APPLICATION_JSON)
-                        .post(ContainerCreateResponse.class, config);
-        } catch (UniformInterfaceException exception) {
-            if (exception.getResponse().getStatus() == 404) {
-                throw new DockerException(String.format("%s is an unrecognized image. Please pull the image first.", config.getImage()));
-            } else if (exception.getResponse().getStatus() == 406) {
-                throw new DockerException("impossible to attach (container not running)");
-            } else if (exception.getResponse().getStatus() == 500) {
-                throw new DockerException("Server error", exception);
-            } else {
-                throw new DockerException(exception);
-            }
-        }
-
+		String response = restTemplate.postForObject(restEndpointUrl + "/containers/create", requestEntity,
+						String.class);
+		try {
+			return new ObjectMapper().readValue(response, ContainerCreateResponse.class);
+		} catch (JsonParseException e) {
+			throw new IllegalStateException(e);
+		} catch (JsonMappingException e) {
+			throw new IllegalStateException(e);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
+		}
     }
 
     public void startContainer(String containerId) throws DockerException {
@@ -339,49 +201,14 @@ public class DockerClient
     }
 
     public void startContainer(String containerId, HostConfig hostConfig) throws DockerException {
-
-        WebResource webResource = client.resource(restEndpointUrl + String.format("/containers/%s/start", containerId));
-
-        try {
-            LOGGER.trace("POST: " + webResource.toString());
-            Builder builder = webResource.accept(MediaType.TEXT_PLAIN);
-            if (hostConfig != null) {
-                builder.type(MediaType.APPLICATION_JSON).post(hostConfig);
-            } else {
-                builder.post((HostConfig) null);
-            }
-        } catch (UniformInterfaceException exception) {
-            if (exception.getResponse().getStatus() == 404) {
-                throw new DockerException(String.format("No such container %s", containerId));
-            } else if (exception.getResponse().getStatus() == 204) {
-                //no error
-                LOGGER.trace("Successfully started container " + containerId);
-            } else if (exception.getResponse().getStatus() == 500) {
-                throw new DockerException("Server error", exception);
-            } else {
-                throw new DockerException(exception);
-            }
-        }
+		restTemplate.postForLocation(restEndpointUrl + "/containers/{containerId}/start",
+				hostConfig, containerId);
     }
 
     public ContainerInspectResponse inspectContainer(String containerId) throws DockerException {
-
-        WebResource webResource = client.resource(restEndpointUrl + String.format("/containers/%s/json", containerId));
-
-        try {
-            LOGGER.trace("GET: " + webResource.toString());
-            return webResource.accept(MediaType.APPLICATION_JSON).get(ContainerInspectResponse.class);
-        } catch (UniformInterfaceException exception) {
-            if (exception.getResponse().getStatus() == 404) {
-                throw new DockerException(String.format("No such container %s", containerId));
-            } else if (exception.getResponse().getStatus() == 500) {
-                throw new DockerException("Server error", exception);
-            } else {
-                throw new DockerException(exception);
-            }
-        }
+		return restTemplate.getForObject(restEndpointUrl + "/containers/{containerId}/json",
+						ContainerInspectResponse.class, containerId );
     }
-
 
     public void removeContainer(String container) throws DockerException {
         this.removeContainer(container, false);
@@ -390,28 +217,13 @@ public class DockerClient
     public void removeContainer(String containerId, boolean removeVolumes) throws DockerException {
         Preconditions.checkState(!StringUtils.isEmpty(containerId), "Container ID can't be empty");
 
-        WebResource webResource = client.resource(restEndpointUrl + "/containers/" + containerId).queryParam("v", removeVolumes ? "1" : "0");
-
-        try {
-            LOGGER.trace("DELETE: " + webResource.toString());
-            String response = webResource.accept(MediaType.APPLICATION_JSON).delete(String.class);
-            LOGGER.trace("Response:" + response);
-        } catch (UniformInterfaceException exception) {
-            if (exception.getResponse().getStatus() == 204) {
-                //no error
-                LOGGER.trace("Successfully removed container " + containerId);
-            } else if (exception.getResponse().getStatus() == 400) {
-                throw new DockerException("bad parameter");
-            } else if (exception.getResponse().getStatus() == 404) {
-                LOGGER.warn(String.format("%s is an unrecognized container.", containerId));
-            } else if (exception.getResponse().getStatus() == 500) {
-                throw new DockerException("Server error", exception);
-            } else {
-                throw new DockerException(exception);
-            }
-        }
+		try {
+			restTemplate.delete(restEndpointUrl + "/containers/{containerId}?v={removeVolumes}", 
+					containerId, removeVolumes ? "1" : "0" );
+		} catch (HttpClientErrorException e) {
+			throw new DockerException(e);
+		}
     }
-
 
     public void removeContainers(List<String> containers, boolean removeVolumes) throws DockerException {
         Preconditions.checkNotNull(containers, "List of containers can't be null");
@@ -421,196 +233,106 @@ public class DockerClient
         }
     }
 
-    public int waitContainer(String containerId) throws DockerException {
-        WebResource webResource = client.resource(restEndpointUrl + String.format("/containers/%s/wait", containerId));
-
-        try {
-            LOGGER.trace("POST: " + webResource.toString());
-            JSONObject jsonObject = webResource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON).post(JSONObject.class);
-            return jsonObject.getInt("StatusCode");
-        } catch (UniformInterfaceException exception) {
-            if (exception.getResponse().getStatus() == 404) {
-                throw new DockerException(String.format("No such container %s", containerId));
-            } else if (exception.getResponse().getStatus() == 500) {
-                throw new DockerException("Server error", exception);
-            } else {
-                throw new DockerException(exception);
-            }
-        } catch (JSONException e) {
-            throw new DockerException(e);
-        }
+    public ContainerWaitResponse waitContainer(String containerId) throws DockerException {
+    	return restTemplate.postForObject(restEndpointUrl + "/containers/{containerId}/wait", null, ContainerWaitResponse.class, containerId);
     }
 
-
-    public ClientResponse logContainer(String containerId) throws DockerException {
+    public InputStream logContainer(String containerId) throws DockerException {
         return logContainer(containerId, false);
     }
 
-    public ClientResponse logContainerStream(String containerId) throws DockerException {
+    public InputStream logContainerStream(String containerId) throws DockerException {
         return logContainer(containerId, true);
     }
 
-    private ClientResponse logContainer(String containerId, boolean stream) throws DockerException {
-        MultivaluedMap<String,String> params = new MultivaluedMapImpl();
-        params.add("logs", "1");
-        params.add("stdout", "1");
-        params.add("stderr", "1");
-        if (stream) {
-            params.add("stream", "1"); // this parameter keeps stream open indefinitely
-        }
+    private InputStream logContainer(String containerId, boolean stream) throws DockerException {
+    	
+		ResponseExtractor<InputStream> responseExtractor = new ResponseExtractor<InputStream>() {
+			@Override
+			public InputStream extractData(ClientHttpResponse response) throws IOException {
+				String result = IOUtils.toString(response.getBody());
+				return new ByteArrayInputStream(result.getBytes());
+			}
+		};
 
-        WebResource webResource = client.resource(restEndpointUrl + String.format("/containers/%s/attach", containerId))
-                .queryParams(params);
+        Map<String,String> params = new HashMap<String, String>();
+        params.put("containerId", containerId);
+        params.put("logs", "1");
+        params.put("stdout", "1");
+        params.put("stderr", "1");
+        params.put("stream", stream ? "1" : "0"); // this parameter keeps stream open indefinitely
 
-        try {
-            LOGGER.trace("POST: " + webResource.toString());
-            return webResource.accept(MediaType.APPLICATION_OCTET_STREAM_TYPE).post(ClientResponse.class, params);
-        } catch (UniformInterfaceException exception) {
-            if (exception.getResponse().getStatus() == 400) {
-                throw new DockerException("bad parameter");
-            } else if (exception.getResponse().getStatus() == 404) {
-                throw new DockerException(String.format("No such container %s", containerId));
-            } else if (exception.getResponse().getStatus() == 500) {
-                throw new DockerException("Server error", exception);
-            } else {
-                throw new DockerException(exception);
-            }
-        }
+        return restTemplate.execute(restEndpointUrl + "/containers/{containerId}/attach?logs={logs}&stdout={stdout}&stderr={stderr}&stream={stream}",
+        		HttpMethod.POST, null, responseExtractor, params);
     }
 
     public List<ChangeLog> containterDiff(String containerId) throws DockerException {
-
-        WebResource webResource = client.resource(restEndpointUrl + String.format("/containers/%s/changes", containerId));
-
-        try {
-            LOGGER.trace("GET: " + webResource.toString());
-            return webResource.accept(MediaType.APPLICATION_JSON).get(new GenericType<List<ChangeLog>>() {});
-        } catch (UniformInterfaceException exception) {
-            if (exception.getResponse().getStatus() == 404) {
-                throw new DockerException(String.format("No such container %s", containerId));
-            } else if (exception.getResponse().getStatus() == 500) {
-                throw new DockerException("Server error", exception);
-            } else {
-                throw new DockerException(exception);
-            }
-        }
+    	ChangeLog[] response = restTemplate.getForObject(restEndpointUrl + "/containers/{containerId}/changes", ChangeLog[].class, containerId);
+		return Arrays.asList(response);
     }
-
-
-
 
     public void stopContainer(String containerId) throws DockerException {
         this.stopContainer(containerId, 10);
     }
 
     public void stopContainer(String containerId, int timeout) throws DockerException {
-
-        WebResource webResource = client.resource(restEndpointUrl + String.format("/containers/%s/stop", containerId))
-                .queryParam("t", String.valueOf(timeout));
-
-
-        try {
-            LOGGER.trace("POST: " + webResource.toString());
-            webResource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON).post();
-        } catch (UniformInterfaceException exception) {
-            if (exception.getResponse().getStatus() == 404) {
-                LOGGER.warn(String.format("No such container %s", containerId));
-            } else if (exception.getResponse().getStatus() == 204) {
-                //no error
-                LOGGER.trace("Successfully stopped container " + containerId);
-            } else if (exception.getResponse().getStatus() == 500) {
-                throw new DockerException("Server error", exception);
-            } else {
-                throw new DockerException(exception);
-            }
-        }
+    	restTemplate.postForLocation(restEndpointUrl + "/containers/{containerId}/stop?t={timeout}", null, containerId, timeout);
     }
 
     public void kill(String containerId) throws DockerException {
-        WebResource webResource = client.resource(restEndpointUrl + String.format("/containers/%s/kill", containerId));
-
-        try {
-            LOGGER.trace("POST: " + webResource.toString());
-            webResource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON).post();
-        } catch (UniformInterfaceException exception) {
-            if (exception.getResponse().getStatus() == 404) {
-                LOGGER.warn(String.format("No such container %s", containerId));
-            } else if (exception.getResponse().getStatus() == 204) {
-                //no error
-                LOGGER.trace("Successfully killed container " + containerId);
-            } else if (exception.getResponse().getStatus() == 500) {
-                throw new DockerException("Server error", exception);
-            } else {
-                throw new DockerException(exception);
-            }
-        }
+    	restTemplate.postForLocation(restEndpointUrl + "/containers/{containerId}/kill", null, containerId);
     }
 
     public void restart(String containerId, int timeout) throws DockerException {
-        WebResource webResource = client.resource(restEndpointUrl + String.format("/containers/%s/restart", containerId));
-
-        try {
-            LOGGER.trace("POST: " + webResource.toString());
-            webResource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON).post();
-        } catch (UniformInterfaceException exception) {
-            if (exception.getResponse().getStatus() == 404) {
-                throw new DockerException(String.format("No such container %s", containerId));
-            } else if (exception.getResponse().getStatus() == 204) {
-                //no error
-                LOGGER.trace("Successfully restarted container " + containerId);
-            } else if (exception.getResponse().getStatus() == 500) {
-                throw new DockerException("Server error", exception);
-            } else {
-                throw new DockerException(exception);
-            }
-        }
+    	restTemplate.postForLocation(restEndpointUrl + "/containers/{containerId}/restart", null, containerId);
     }
 
+    private static class CommitResponse {
+
+        @JsonProperty("Id")
+        public String id;
+
+        @Override
+        public String toString() {
+            return "CommitResponse{" +
+                    "id=" + id +
+                    '}';
+        }
+
+    }
     public String commit(CommitConfig commitConfig) throws DockerException {
         Preconditions.checkNotNull(commitConfig.container, "Container ID was not specified");
 
-        MultivaluedMap<String,String> params = new MultivaluedMapImpl();
-        params.add("container", commitConfig.container);
-        params.add("repo", commitConfig.repo);
-        params.add("tag", commitConfig.tag);
-        params.add("m", commitConfig.message);
-        params.add("author", commitConfig.author);
-        params.add("run", commitConfig.run);
+        Map<String,String> params = new HashMap<String, String>();
+        params.put("container", commitConfig.container);
+        params.put("repo", commitConfig.repo);
+        params.put("tag", commitConfig.tag);
+        params.put("m", commitConfig.message);
+        params.put("author", commitConfig.author);
+        params.put("run", commitConfig.run);
 
-        WebResource webResource = client.resource(restEndpointUrl + "/commit").queryParams(params);
+        String response = restTemplate.postForObject(restEndpointUrl + "/commit?container={container}&repo={repo}&tag={tag}&m={m}&author={author}&run={run}",
+        		null, String.class, params);
 
-        try {
-            LOGGER.trace("POST: " + webResource.toString());
-            JSONObject jsonObject = webResource.accept("application/vnd.docker.raw-stream").post(JSONObject.class, params);
-            return jsonObject.getString("Id");
-        } catch (UniformInterfaceException exception) {
-            if (exception.getResponse().getStatus() == 404) {
-                throw new DockerException(String.format("No such container %s", commitConfig.container));
-            } else if (exception.getResponse().getStatus() == 500) {
-                throw new DockerException("Server error", exception);
-            } else {
-                throw new DockerException(exception);
-            }
-        } catch (JSONException e) {
-            throw new DockerException(e);
-        }
+		try {
+			return new ObjectMapper().readValue(response, CommitResponse.class).id;
+		} catch (JsonParseException e) {
+			throw new IllegalStateException(e);
+		} catch (JsonMappingException e) {
+			throw new IllegalStateException(e);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
+		}
     }
 
-
-    public ClientResponse build(File dockerFolder) throws DockerException {
+    public InputStream build(File dockerFolder) throws DockerException {
         return this.build(dockerFolder, null);
     }
 
-    public ClientResponse build(File dockerFolder, String tag) throws DockerException {
+    public InputStream build(File dockerFolder, String tag) throws DockerException {
         Preconditions.checkNotNull(dockerFolder, "Folder is null");
         Preconditions.checkArgument(dockerFolder.exists(), "Folder %s doesn't exist", dockerFolder);
         Preconditions.checkState(new File(dockerFolder, "Dockerfile").exists(), "Dockerfile doesn't exist in " + dockerFolder);
-
-        //We need to use Jersey HttpClient here, since ApacheHttpClient4 will not add boundary filed to
-        //Content-Type: multipart/form-data; boundary=Boundary_1_372491238_1372806136625
-
-        MultivaluedMap<String,String> params = new MultivaluedMapImpl();
-        params.add("t", tag);
 
         // ARCHIVE TAR
         String archiveNameWithOutExtension = UUID.randomUUID().toString();
@@ -627,7 +349,8 @@ public class DockerClient
             }
 
             //Create tmp docker context folder
-            tmpDockerContextFolder = new File(FileUtils.getTempDirectoryPath(), "docker-java-build" + archiveNameWithOutExtension);
+//            tmpDockerContextFolder = new File(FileUtils.getTempDirectoryPath(), "docker-java-build" + archiveNameWithOutExtension);
+            tmpDockerContextFolder = new File("/tmp", "docker-java-build" + archiveNameWithOutExtension);
 
             FileUtils.copyFileToDirectory(dockerFile, tmpDockerContextFolder);
 
@@ -644,7 +367,7 @@ public class DockerClient
                     }
 
                     if (!src.exists()) {
-                        throw new DockerException(String.format("Sorce file %s doesnt' exist", src));
+                        throw new DockerException(String.format("Source file %s doesnt' exist", src));
                     }
                     if (src.isDirectory()) {
                         FileUtils.copyDirectory(src, tmpDockerContextFolder);
@@ -662,27 +385,21 @@ public class DockerClient
             throw new DockerException("Error occurred while preparing Docker context folder.", ex);
         }
 
-        WebResource webResource = client.resource(restEndpointUrl + "/build").queryParams(params);
+		final HttpHeaders requestHeaders = new HttpHeaders();
+		requestHeaders.set("Content-Type", "application/tar");
+		HttpEntity<byte[]> requestEntity;
+		try {
+			FileInputStream openInputStream = FileUtils.openInputStream(dockerFolderTar);
+			byte[] byteArray = IOUtils.toByteArray(openInputStream);
+			requestEntity = new HttpEntity<byte[]>(byteArray, requestHeaders);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
+		}
 
-        try {
-            LOGGER.trace("POST: " + webResource.toString());
-            return webResource
-                    .type("application/tar")
-                    .accept(MediaType.TEXT_PLAIN)
-                    .post(ClientResponse.class, FileUtils.openInputStream(dockerFolderTar));
-        } catch (UniformInterfaceException exception) {
-            if (exception.getResponse().getStatus() == 500) {
-                throw new DockerException("Server error", exception);
-            } else {
-                throw new DockerException(exception);
-            }
-        } catch (IOException e) {
-            throw new DockerException(e);
-        } finally {
-            FileUtils.deleteQuietly(dockerFolderTar);
-            FileUtils.deleteQuietly(tmpDockerContextFolder);
-        }
+        final ResponseEntity<String> response = restTemplate.exchange(restEndpointUrl + "/build?t={tag}", HttpMethod.POST, requestEntity, String.class,
+        		tag);
 
+        return new ByteArrayInputStream(response.getBody().getBytes());
     }
 
 }

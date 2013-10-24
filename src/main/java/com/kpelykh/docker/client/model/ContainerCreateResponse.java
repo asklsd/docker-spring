@@ -5,23 +5,37 @@ import org.codehaus.jackson.annotate.JsonProperty;
 import java.util.Arrays;
 
 /**
- *
+ * 
  * @author Konstantin Pelykh (kpelykh@gmail.com)
- *
+ * 
  */
 public class ContainerCreateResponse {
 
-    @JsonProperty("Id")
-    public String id;
+	@JsonProperty("Id")
+	private String id;
 
-    @JsonProperty("Warnings")
-    public String[] warnings;
+	@JsonProperty("Warnings")
+	private String[] warnings;
 
-    @Override
-    public String toString() {
-        return "ContainerCreateResponse{" +
-                "id='" + id + '\'' +
-                ", warnings=" + Arrays.toString(warnings) +
-                '}';
-    }
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public String[] getWarnings() {
+		return warnings;
+	}
+
+	public void setWarnings(String[] warnings) {
+		this.warnings = warnings;
+	}
+
+	@Override
+	public String toString() {
+		return "ContainerCreateResponse{" + "id='" + id + '\'' + ", warnings="
+				+ Arrays.toString(warnings) + '}';
+	}
 }

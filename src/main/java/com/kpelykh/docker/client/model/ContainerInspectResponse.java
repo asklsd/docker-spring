@@ -51,6 +51,11 @@ public class ContainerInspectResponse {
         @JsonProperty("Gateway") public String gateway;
         @JsonProperty("Bridge") public String bridge;
         @JsonProperty("PortMapping") public Map<String,Map<String, String>> portMapping;
+		@Override
+		public String toString() {
+			return "NetworkSettings [ipAddress=" + ipAddress + ", ipPrefixLen=" + ipPrefixLen + ", gateway=" + gateway
+					+ ", bridge=" + bridge + ", portMapping=" + portMapping + "]";
+		}
     }
 
     public class ContainerState {
