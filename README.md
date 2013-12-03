@@ -1,4 +1,12 @@
-# docker-java
+# docker-java (fork using the Spring Framework RestTemplate)
+
+## Acknowledgements
+
+This docker-java fork is based on [docker-java](https://github.com/kpelykh/docker-java "docker-java") and
+has been rewritten to use JUnit instead of TestNG and uses the Spring Framework RestTemplate to communicate
+with the Docker Server.
+
+## docker-java
 
 Java API client for [Docker](http://docs.docker.io/ "Docker")
 
