@@ -1,5 +1,8 @@
 package com.kpelykh.docker.client.model;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.codehaus.jackson.annotate.JsonProperty;
 
 /**
@@ -9,6 +12,13 @@ import org.codehaus.jackson.annotate.JsonProperty;
  */
 public class HostConfig {
 
+    public static class HostPortBinding {
+    	public HostPortBinding(int hostPort) {
+    		this.hostPort = hostPort;
+		}
+		public int hostPort;
+    }
+
     @JsonProperty("Binds")
     public String[] binds;
 
@@ -17,6 +27,11 @@ public class HostConfig {
 
     @JsonProperty("LxcConf")
     public LxcConf[] lxcConf;
+
+	public Map<String, HostPortBinding[]> portBindings = new HashMap<String, HostConfig.HostPortBinding[]>();
+
+    public HostConfig() {
+    }
 
     public HostConfig(String[] binds) {
         this.binds = binds;

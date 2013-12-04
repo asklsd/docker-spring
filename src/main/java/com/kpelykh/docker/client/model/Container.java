@@ -12,6 +12,9 @@ public class Container {
     @JsonProperty("Id")
     public String id;
 
+    @JsonProperty("Names")
+    public String[] names;
+
     @JsonProperty("Command")
     public String command;
 
@@ -25,7 +28,7 @@ public class Container {
     public String status;
 
     @JsonProperty("Ports")
-    public String ports;   //Example value "49164->6900, 49165->7100"
+    public String[] ports;   //Example value "49164->6900, 49165->7100"
 
     @JsonProperty("SizeRw")
     public int sizeRw;

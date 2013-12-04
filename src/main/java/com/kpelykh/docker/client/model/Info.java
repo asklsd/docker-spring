@@ -1,5 +1,7 @@
 package com.kpelykh.docker.client.model;
 
+import java.util.Arrays;
+
 import org.codehaus.jackson.annotate.JsonProperty;
 
 /**
@@ -18,6 +20,12 @@ public class Info {
     @JsonProperty("Images")
     public int    images;
 
+    @JsonProperty("Driver")
+    public String driver;
+
+    @JsonProperty("DriverStatus")
+    public String[][] driverStatus;
+
     @JsonProperty("NFd")
     public int    NFd;
 
@@ -27,6 +35,9 @@ public class Info {
     @JsonProperty("MemoryLimit")
     public boolean memoryLimit;
 
+    @JsonProperty("IPv4Forwarding")
+    public String IPv4Forwarding;
+    
     @JsonProperty("LXCVersion")
     public String lxcVersion;
 
@@ -35,9 +46,6 @@ public class Info {
 
     @JsonProperty("KernelVersion")
     public String kernelVersion;
-
-    @JsonProperty("IPv4Forwarding")
-    public String IPv4Forwarding;
 
     @JsonProperty("IndexServerAddress")
     public String IndexServerAddress;
@@ -48,6 +56,8 @@ public class Info {
                 "debug=" + debug +
                 ", containers=" + containers +
                 ", images=" + images +
+                ", driver=" + driver +
+                ", driverStatus=" + printDriverStatus() +
                 ", NFd=" + NFd +
                 ", NGoroutines=" + NGoroutines +
                 ", memoryLimit=" + memoryLimit +
@@ -58,4 +68,15 @@ public class Info {
                 ", IndexServerAddress='" + IndexServerAddress + '\'' +
                 '}';
     }
+
+	private String printDriverStatus() {
+		StringBuffer result = new StringBuffer();
+		result.append("[");
+		for (String[] entry : driverStatus) {
+			result.append(Arrays.toString(entry));
+			result.append(",");
+		}
+		result.append("]");
+		return result.toString();
+	}
 }

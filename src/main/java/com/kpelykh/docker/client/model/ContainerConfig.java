@@ -1,6 +1,7 @@
 package com.kpelykh.docker.client.model;
 
 import java.util.Arrays;
+import java.util.Map;
 
 import org.codehaus.jackson.annotate.JsonProperty;
 
@@ -11,8 +12,10 @@ import org.codehaus.jackson.annotate.JsonProperty;
  */
 public class ContainerConfig {
 
-    @JsonProperty("Hostname")     private String    hostName = "";
+	@JsonProperty("Hostname")     private String    hostName = "";
+    @JsonProperty("Domainname")   private String    domainName = "";
     @JsonProperty("PortSpecs")    private String[]  portSpecs;
+    @JsonProperty("ExposedPorts") private Map<String, Object> exposedPorts;
     @JsonProperty("User")         private String    user = "";
     @JsonProperty("Tty")          private boolean   tty = false;
     @JsonProperty("OpenStdin")    private boolean   stdinOpen = false;
@@ -51,10 +54,6 @@ public class ContainerConfig {
         this.privileged = privileged;
     }
 
-    public String getHostName() {
-        return hostName;
-    }
-
     public boolean getNetworkDisabled() {
         return networkDisabled;
     }
@@ -63,16 +62,36 @@ public class ContainerConfig {
         this.networkDisabled = networkDisabled;
     }
 
+    public String getHostName() {
+    	return hostName;
+    }
+    
     public void setHostName(String hostName) {
         this.hostName = hostName;
     }
 
+    public String getDomainName() {
+    	return domainName;
+    }
+    
+    public void setDomainName(String domainName) {
+    	this.domainName = domainName;
+    }
+    
     public String[] getPortSpecs() {
         return portSpecs;
     }
 
     public void setPortSpecs(String[] portSpecs) {
         this.portSpecs = portSpecs;
+    }
+
+    public Map<String, Object> getExposedPorts() {
+    	return exposedPorts;
+    }
+    
+    public void setExposedPorts(Map<String, Object> exposedPorts) {
+    	this.exposedPorts = exposedPorts;
     }
 
     public String getUser() {
@@ -215,7 +234,9 @@ public class ContainerConfig {
     public String toString() {
         return "ContainerConfig{" +
                 "hostName='" + hostName + '\'' +
+                ", domainName='" + domainName + '\'' +
                 ", portSpecs=" + Arrays.toString(portSpecs) +
+                ", exposedPorts=" + exposedPorts +
                 ", user='" + user + '\'' +
                 ", tty=" + tty +
                 ", stdinOpen=" + stdinOpen +
