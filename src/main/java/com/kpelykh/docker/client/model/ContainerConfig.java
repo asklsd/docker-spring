@@ -247,7 +247,7 @@ public class ContainerConfig {
                 ", attachStdin=" + attachStdin +
                 ", attachStdout=" + attachStdout +
                 ", attachStderr=" + attachStderr +
-                ", env=" + env +
+                ", env=" + Arrays.toString(env) +
                 ", cmd=" + Arrays.toString(cmd) +
                 ", dns=" + Arrays.toString(dns) +
                 ", image='" + image + '\'' +

@@ -1,4 +1,6 @@
-# docker-java (fork using the Spring Framework RestTemplate)
+# docker-spring
+
+A fork from docker-java using the Spring Framework RestTemplate
 
 ## Acknowledgements
 
@@ -6,11 +8,11 @@ This docker-java fork is based on [docker-java](https://github.com/kpelykh/docke
 has been rewritten to use JUnit instead of TestNG and uses the Spring Framework RestTemplate to communicate
 with the Docker Server.
 
-## docker-java
+## docker-spring
 
 Java API client for [Docker](http://docs.docker.io/ "Docker")
 
-Supports Docker Client API v1.3, Docker Server version 0.6.1
+Supports a subset of the Docker Client API v1.7, Docker Server version 0.7.2
 
 ## Build with Maven
 
@@ -20,11 +22,10 @@ Supports Docker Client API v1.3, Docker Server version 0.6.1
 * Maven 3.0.5
 * Docker daemon running
 
-
-By default maven will run tests during build process. Tests are using localhost instance of Docker, make sure that
+By default Maven will run tests during build process. Tests are using localhost instance of Docker, make sure that
 you have Docker running, or the tests.
 
-*Since version 0.6, Docker is using unix socket for communication, however java client works over TCP/IP, so you need to
+* Since version 0.6, Docker is using unix socket for communication, however java client works over TCP/IP, so you need to
 make sure that your Docker server is listening on TCP/IP port.*
 
 Run docker:
@@ -33,18 +34,21 @@ Run docker:
 
 Make sure that docker is up:
     
-    $docker -H=tcp://127.0.0.1:4243 version
-    Client version: 0.6.1
-    Server version: 0.6.1
-    Git commit: 5105263
-    Go version: go1.1.2
-    Last stable version: 0.6.1
+    $ docker -H=tcp://127.0.0.1:4243 version
+
+Client version: 0.7.2
+Go version (client): go1.2
+Git commit (client): 28b162e
+Server version: 0.7.2
+Git commit (server): 28b162e
+Go version (server): go1.2
+Last stable version: 0.7.2
 
 Run build with tests:
 
     $ mvn clean install
 
-If you don't have Docker running localy, you can skip tests with -DskipTests flag set to true:
+If you don't have Docker running locally, you can skip tests with -DskipTests flag set to true:
 
     $ mvn clean install -DskipTests=true
 
@@ -54,8 +58,8 @@ To use Java Docker client, include dependency into your pom.xml:
 
     <dependency>
           <groupId>com.kpelykh</groupId>
-          <artifactId>docker-java</artifactId>
-          <version>0.6.1-SNAPSHOT</version>
+          <artifactId>docker-spring</artifactId>
+          <version>0.7.2-SNAPSHOT</version>
     </dependency>
 
 *Currently Docker Java client is not available in Maven Central, so you will need to install it to a local

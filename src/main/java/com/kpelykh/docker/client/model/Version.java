@@ -12,6 +12,9 @@ public class Version {
     @JsonProperty("Version")
     public String version;
 
+    @JsonProperty("KernelVersion")
+    public String kernelVersion;
+    
     @JsonProperty("GitCommit")
     public String  gitCommit;
 
@@ -24,6 +27,7 @@ public class Version {
                 "version='" + version + '\'' +
                 ", gitCommit='" + gitCommit + '\'' +
                 ", goVersion='" + goVersion + '\'' +
+                ", kernelVersion='" + kernelVersion + '\'' +
                 '}';
     }
 

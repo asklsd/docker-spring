@@ -9,12 +9,12 @@
 	</parent>
 
 	<groupId>com.kpelykh</groupId>
-	<artifactId>docker-java</artifactId>
+	<artifactId>docker-spring</artifactId>
 	<packaging>jar</packaging>
-	<version>0.6.1-SNAPSHOT</version>
+	<version>0.7.2-SNAPSHOT</version>
 
-	<name>docker-java</name>
-	<url>https://github.com/kpelykh/docker-java</url>
+	<name>docker-spring</name>
+	<url>https://github.com/fwaibel/docker-spring</url>
 	<description>Java API Client for Docker</description>
 
 	<licenses>

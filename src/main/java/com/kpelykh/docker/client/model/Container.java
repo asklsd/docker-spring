@@ -1,5 +1,7 @@
 package com.kpelykh.docker.client.model;
 
+import java.util.Arrays;
+
 import org.codehaus.jackson.annotate.JsonProperty;
 
 /**
@@ -56,7 +58,7 @@ public class Container {
                 ", image='" + image + '\'' +
                 ", created=" + created +
                 ", status='" + status + '\'' +
-                ", ports=" + ports +
+                ", ports=" + Arrays.toString(ports) +
                 ", sizeRw=" + sizeRw +
                 ", size=" + size +
                 ", virtualSize=" + virtualSize +

@@ -50,6 +50,9 @@ public class Info {
     @JsonProperty("IndexServerAddress")
     public String IndexServerAddress;
 
+    @JsonProperty("SwapLimit")
+    public int swapLimit;
+
     @Override
     public String toString() {
         return "Info{" +
@@ -66,6 +69,7 @@ public class Info {
                 ", kernelVersion='" + kernelVersion + '\'' +
                 ", IPv4Forwarding='" + IPv4Forwarding + '\'' +
                 ", IndexServerAddress='" + IndexServerAddress + '\'' +
+                ", SwapLimit='" + swapLimit + '\'' +
                 '}';
     }
 

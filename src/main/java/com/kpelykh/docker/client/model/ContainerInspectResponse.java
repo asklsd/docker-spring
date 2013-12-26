@@ -18,6 +18,7 @@ public class ContainerInspectResponse {
     @JsonProperty("Created") public String created;
     @JsonProperty("Path") public String path;
     @JsonProperty("HostnamePath") public String hostnamePath;
+    @JsonProperty("HostConfig") public HostConfig hostConfig;
     @JsonProperty("HostsPath") public String hostsPath;
     @JsonProperty("Args") public String[] args;
     @JsonProperty("Config") public ContainerConfig config;
@@ -45,6 +46,7 @@ public class ContainerInspectResponse {
                 ", hostsPath='" + hostsPath + '\'' +
                 ", args=" + Arrays.toString(args) +
                 ", config=" + config +
+                ", hostConfig=" + hostConfig +
                 ", state=" + state +
                 ", image='" + image + '\'' +
                 ", networkSettings=" + networkSettings +

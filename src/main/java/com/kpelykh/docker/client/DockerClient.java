@@ -1,10 +1,13 @@
 package com.kpelykh.docker.client;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -15,10 +18,13 @@ import java.util.UUID;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.objenesis.instantiator.basic.NewInstanceInstantiator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
@@ -28,6 +34,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.json.MappingJacksonHttpMessageConverter;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResponseExtractor;
 import org.springframework.web.client.RestTemplate;
@@ -60,23 +68,44 @@ public class DockerClient
 
     private RestTemplate restTemplate;
 
-    private String restEndpointUrl;
+    private String dockerDeamonUrl;
+
+    // info and version return ContentType text/plain which is ignored by the MJHMC by default.
+	private RestTemplate textRestTemplate;
+
+    public DockerClient() {
+    	this("http://localhost:4243");
+    }
 
     public DockerClient(String serverUrl) {
-        restEndpointUrl = serverUrl;
+        dockerDeamonUrl = serverUrl;
         restTemplate = new RestTemplate();
+
+		textRestTemplate = new RestTemplate();
+		List<HttpMessageConverter<?>> messageConverters = textRestTemplate.getMessageConverters();
+		messageConverters.clear();
+		MappingJacksonHttpMessageConverter converter = new MappingJacksonHttpMessageConverter();
+		List<MediaType> supportedMediaTypes = new ArrayList<MediaType>(converter.getSupportedMediaTypes());
+		supportedMediaTypes.add(new MediaType("text", "plain"));
+		messageConverters.add(converter);
+		converter.setSupportedMediaTypes(supportedMediaTypes);
     }
+
+    public void setDockerDeamonUrl(String dockerDeamonUrl) {
+    	LOGGER.info("Changing docker deamon URL to '{}'", dockerDeamonUrl);
+		this.dockerDeamonUrl = dockerDeamonUrl;
+	}
 
     /**
      ** MISC API
      **/
 
     public Info info() throws DockerException {
-		return restTemplate.getForObject(restEndpointUrl + "/info", Info.class);
+		return textRestTemplate.getForObject(dockerDeamonUrl + "/info", Info.class);
     }
 
     public Version version() throws DockerException {
-    	return restTemplate.getForObject(restEndpointUrl + "/version", Version.class);
+    	return textRestTemplate.getForObject(dockerDeamonUrl + "/version", Version.class);
     }
 
     /**
@@ -106,12 +135,12 @@ public class DockerClient
         params.put("fromImage", repository);
         params.put("registry", registry);
 
-        restTemplate.exchange(restEndpointUrl
+        restTemplate.exchange(dockerDeamonUrl
 				+ "/images/create?tag={tag}&fromImage={fromImage}&registry={registry}", HttpMethod.POST, null, String.class, params);
     }
 
     public List<SearchItem> search(String search) throws DockerException {
-		SearchItem[] response = restTemplate.getForObject(restEndpointUrl + "/images/search?term={search}", SearchItem[].class, search);
+		SearchItem[] response = restTemplate.getForObject(dockerDeamonUrl + "/images/search?term={search}", SearchItem[].class, search);
 		return Arrays.asList(response);
     }
 
@@ -119,7 +148,7 @@ public class DockerClient
         Preconditions.checkState(!StringUtils.isEmpty(imageId), "Image ID can't be empty");
 
 		try {
-			restTemplate.delete(restEndpointUrl + "/images/{imageId}", imageId);
+			restTemplate.delete(dockerDeamonUrl + "/images/{imageId}", imageId);
 		} catch (HttpClientErrorException e) {
 			if (e.getStatusCode().equals(HttpStatus.NOT_FOUND)) {
 	            LOGGER.warn("Ignoring deletion of non existing image {}", imageId);
@@ -138,7 +167,7 @@ public class DockerClient
     }
 
     public String getVizImages() throws DockerException {
-		return restTemplate.getForObject(restEndpointUrl + "/images/viz", String.class);
+		return restTemplate.getForObject(dockerDeamonUrl + "/images/viz", String.class);
     }
 
     public List<Image> getImages() throws DockerException {
@@ -158,13 +187,13 @@ public class DockerClient
     	params.put("filter", name);
     	params.put("all", allImages ? "1" : "0");
 
-    	Image[] response = restTemplate.getForObject(restEndpointUrl + "/images/json?filter={filter}&all={all}",
+    	Image[] response = restTemplate.getForObject(dockerDeamonUrl + "/images/json?filter={filter}&all={all}",
 				Image[].class, params);
 		return Arrays.asList(response);
     }
 
     public ImageInspectResponse inspectImage(String imageId) throws DockerException {
-		return restTemplate.getForObject(restEndpointUrl + "/images/{imageId}/json",
+		return restTemplate.getForObject(dockerDeamonUrl + "/images/{imageId}/json",
 				ImageInspectResponse.class, imageId);
     }
 
@@ -173,7 +202,7 @@ public class DockerClient
      **/
 
     public List<Container> listContainers(boolean listAll) {
-		Container[] response = restTemplate.getForObject(restEndpointUrl + "/containers/json?all={all}", Container[].class, listAll);
+		Container[] response = restTemplate.getForObject(dockerDeamonUrl + "/containers/json?all={all}", Container[].class, listAll);
 		return Arrays.asList(response);
     }
 
@@ -183,7 +212,19 @@ public class DockerClient
     	requestHeaders.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
     	final HttpEntity<ContainerConfig> requestEntity = new HttpEntity<ContainerConfig>(config, requestHeaders);
 
-		String response = restTemplate.postForObject(restEndpointUrl + "/containers/create", requestEntity,
+    	ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		try {
+			new ObjectMapper().writeValue(outputStream, config);
+			System.out.println(new String(outputStream.toByteArray()));
+		} catch (JsonGenerationException e1) {
+			e1.printStackTrace();
+		} catch (JsonMappingException e1) {
+			e1.printStackTrace();
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+
+		String response = restTemplate.postForObject(dockerDeamonUrl + "/containers/create", requestEntity,
 						String.class);
 		try {
 			return new ObjectMapper().readValue(response, ContainerCreateResponse.class);
@@ -201,12 +242,12 @@ public class DockerClient
     }
 
     public void startContainer(String containerId, HostConfig hostConfig) throws DockerException {
-		restTemplate.postForLocation(restEndpointUrl + "/containers/{containerId}/start",
+		restTemplate.postForLocation(dockerDeamonUrl + "/containers/{containerId}/start",
 				hostConfig, containerId);
     }
 
     public ContainerInspectResponse inspectContainer(String containerId) throws DockerException {
-		return restTemplate.getForObject(restEndpointUrl + "/containers/{containerId}/json",
+		return restTemplate.getForObject(dockerDeamonUrl + "/containers/{containerId}/json",
 						ContainerInspectResponse.class, containerId );
     }
 
@@ -218,7 +259,7 @@ public class DockerClient
         Preconditions.checkState(!StringUtils.isEmpty(containerId), "Container ID can't be empty");
 
 		try {
-			restTemplate.delete(restEndpointUrl + "/containers/{containerId}?v={removeVolumes}", 
+			restTemplate.delete(dockerDeamonUrl + "/containers/{containerId}?v={removeVolumes}", 
 					containerId, removeVolumes ? "1" : "0" );
 		} catch (HttpClientErrorException e) {
 			throw new DockerException(e);
@@ -234,7 +275,7 @@ public class DockerClient
     }
 
     public ContainerWaitResponse waitContainer(String containerId) throws DockerException {
-    	return restTemplate.postForObject(restEndpointUrl + "/containers/{containerId}/wait", null, ContainerWaitResponse.class, containerId);
+    	return restTemplate.postForObject(dockerDeamonUrl + "/containers/{containerId}/wait", null, ContainerWaitResponse.class, containerId);
     }
 
     public InputStream logContainer(String containerId) throws DockerException {
@@ -262,12 +303,12 @@ public class DockerClient
         params.put("stderr", "1");
         params.put("stream", stream ? "1" : "0"); // this parameter keeps stream open indefinitely
 
-        return restTemplate.execute(restEndpointUrl + "/containers/{containerId}/attach?logs={logs}&stdout={stdout}&stderr={stderr}&stream={stream}",
+        return restTemplate.execute(dockerDeamonUrl + "/containers/{containerId}/attach?logs={logs}&stdout={stdout}&stderr={stderr}&stream={stream}",
         		HttpMethod.POST, null, responseExtractor, params);
     }
 
     public List<ChangeLog> containterDiff(String containerId) throws DockerException {
-    	ChangeLog[] response = restTemplate.getForObject(restEndpointUrl + "/containers/{containerId}/changes", ChangeLog[].class, containerId);
+    	ChangeLog[] response = restTemplate.getForObject(dockerDeamonUrl + "/containers/{containerId}/changes", ChangeLog[].class, containerId);
 		return Arrays.asList(response);
     }
 
@@ -276,15 +317,15 @@ public class DockerClient
     }
 
     public void stopContainer(String containerId, int timeout) throws DockerException {
-    	restTemplate.postForLocation(restEndpointUrl + "/containers/{containerId}/stop?t={timeout}", null, containerId, timeout);
+    	restTemplate.postForLocation(dockerDeamonUrl + "/containers/{containerId}/stop?t={timeout}", null, containerId, timeout);
     }
 
     public void kill(String containerId) throws DockerException {
-    	restTemplate.postForLocation(restEndpointUrl + "/containers/{containerId}/kill", null, containerId);
+    	restTemplate.postForLocation(dockerDeamonUrl + "/containers/{containerId}/kill", null, containerId);
     }
 
     public void restart(String containerId, int timeout) throws DockerException {
-    	restTemplate.postForLocation(restEndpointUrl + "/containers/{containerId}/restart", null, containerId);
+    	restTemplate.postForLocation(dockerDeamonUrl + "/containers/{containerId}/restart", null, containerId);
     }
 
     private static class CommitResponse {
@@ -311,7 +352,7 @@ public class DockerClient
         params.put("author", commitConfig.author);
         params.put("run", commitConfig.run);
 
-        String response = restTemplate.postForObject(restEndpointUrl + "/commit?container={container}&repo={repo}&tag={tag}&m={m}&author={author}&run={run}",
+        String response = restTemplate.postForObject(dockerDeamonUrl + "/commit?container={container}&repo={repo}&tag={tag}&m={m}&author={author}&run={run}",
         		null, String.class, params);
 
 		try {
@@ -396,10 +437,14 @@ public class DockerClient
 			throw new IllegalStateException(e);
 		}
 
-        final ResponseEntity<String> response = restTemplate.exchange(restEndpointUrl + "/build?t={tag}", HttpMethod.POST, requestEntity, String.class,
+        final ResponseEntity<String> response = restTemplate.exchange(dockerDeamonUrl + "/build?t={tag}", HttpMethod.POST, requestEntity, String.class,
         		tag);
 
         return new ByteArrayInputStream(response.getBody().getBytes());
     }
+
+	public RestTemplate getRestTemplate() {
+		return restTemplate;
+	}
 
 }
