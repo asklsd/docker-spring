@@ -138,13 +138,15 @@
 			<version>${slf4j-api.version}</version>
 		</dependency>
 
-		<dependency>
 			<!-- needed only for annotations -->
+<!-- 
+		<dependency>
 			<groupId>com.google.code.findbugs</groupId>
 			<artifactId>jsr305</artifactId>
 			<optional>true</optional>
 			<version>${jsr305.version}</version>
 		</dependency>
+ -->
 
 		<!-- /// Test /////////////////////////// -->
 		<dependency>
