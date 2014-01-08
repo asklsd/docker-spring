@@ -26,16 +26,22 @@
 	</licenses>
 
 	<scm>
-		<connection>scm:git:git@github.com:kpelykh/docker-java.git</connection>
-		<url>scm:git:git@github.com:kpelykh/docker-java.git</url>
-		<developerConnection>scm:git:git@github.com:kpelykh/docker-java.git</developerConnection>
+		<connection>scm:git:git@github.com:fwaibel/docker-spring.git</connection>
+		<url>scm:git:git@github.com:fwaibel/docker-spring.git</url>
+		<developerConnection>scm:git:git@github.com:fwaibel/docker-spring.git</developerConnection>
 	</scm>
 
 	<developers>
 		<developer>
+			<!-- Author of the original docker-java -->
 			<id>kpelykh</id>
 			<name>Konstantin Pelykh</name>
 			<email>kpelykh@gmail.com</email>
+		</developer>
+		<developer>
+			<id>fwaibel</id>
+			<name>Florian Waibel</name>
+			<email>fwaibel@eclipsesource.com</email>
 		</developer>
 	</developers>
 
