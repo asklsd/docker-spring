@@ -13,34 +13,57 @@ import org.codehaus.jackson.annotate.JsonProperty;
  */
 public class HostConfig {
 
-	public static class HostPortBinding {
-		public HostPortBinding(int hostPort) {
-			this.hostPort = hostPort;
+	public class LxcConf {
+
+		@JsonProperty("Key")
+		private String key;
+
+		@JsonProperty("Value")
+		private String value;
+
+		public String getKey() {
+			return key;
 		}
 
-		public int hostPort;
+		public void setKey(String key) {
+			this.key = key;
+		}
+
+		public String getValue() {
+			return value;
+		}
+
+		public void setValue(String value) {
+			this.value = value;
+		}
+
+		@Override
+		public String toString() {
+			return "LxcConf [key=" + key + ", value=" + value + "]";
+		}
+
 	}
 
 	@JsonProperty("PublishAllPorts")
-	public boolean publishAllPorts;
+	private boolean publishAllPorts;
 
 	@JsonProperty("Privileged")
-	public boolean privileged;
+	private boolean privileged;
 
 	@JsonProperty("Binds")
-	public String[] binds;
+	private String[] binds;
 
 	@JsonProperty("Links")
-	public String[] links;
+	private String[] links;
 
 	@JsonProperty("ContainerIDFile")
-	public String containerIDFile;
+	private String containerIDFile;
 
 	@JsonProperty("LxcConf")
-	public LxcConf[] lxcConf;
+	private LxcConf[] lxcConf;
 
 	@JsonProperty("PortBindings")
-	public Map<String, HostPortBinding[]> portBindings = new HashMap<String, HostConfig.HostPortBinding[]>();
+	private Map<String, HostPortBinding[]> portBindings = new HashMap<String, HostPortBinding[]>();
 
 	public HostConfig() {
 	}
@@ -49,12 +72,36 @@ public class HostConfig {
 		this.binds = binds;
 	}
 
+	public boolean isPublishAllPorts() {
+		return publishAllPorts;
+	}
+
+	public void setPublishAllPorts(boolean publishAllPorts) {
+		this.publishAllPorts = publishAllPorts;
+	}
+
+	public boolean isPrivileged() {
+		return privileged;
+	}
+
+	public void setPrivileged(boolean privileged) {
+		this.privileged = privileged;
+	}
+
 	public String[] getBinds() {
 		return binds;
 	}
 
 	public void setBinds(String[] binds) {
 		this.binds = binds;
+	}
+
+	public String[] getLinks() {
+		return links;
+	}
+
+	public void setLinks(String[] links) {
+		this.links = links;
 	}
 
 	public String getContainerIDFile() {
@@ -73,29 +120,12 @@ public class HostConfig {
 		this.lxcConf = lxcConf;
 	}
 
-	public class LxcConf {
-		@JsonProperty("Key")
-		public String key;
+	public Map<String, HostPortBinding[]> getPortBindings() {
+		return portBindings;
+	}
 
-		@JsonProperty("Value")
-		public String value;
-
-		public String getKey() {
-			return key;
-		}
-
-		public void setKey(String key) {
-			this.key = key;
-		}
-
-		public String getValue() {
-			return value;
-		}
-
-		public void setValue(String value) {
-			this.value = value;
-		}
-
+	public void setPortBindings(Map<String, HostPortBinding[]> portBindings) {
+		this.portBindings = portBindings;
 	}
 
 	@Override

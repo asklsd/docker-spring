@@ -121,3 +121,10 @@ user dockerClient.build(baseDir), where baseDir is a path to folder containing D
 
 For additional examples, please look at [DockerClientTest.java](https://github.com/kpelykh/docker-java/blob/master/src/test/java/com/kpelykh/docker/client/test/DockerClientTest.java "DockerClientTest.java")
 
+## HowTo configure the DockerClient within Eclipse Virgo
+
+Put dockerClient.properties into the pickup folder of your Virgo installation.
+
+-- snipp --
+dockerDeamonUrl=http://localhost:4243
+-- snapp --

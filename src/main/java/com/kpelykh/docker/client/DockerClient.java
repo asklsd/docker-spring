@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -19,12 +18,10 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.objenesis.instantiator.basic.NewInstanceInstantiator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
@@ -370,7 +367,7 @@ public class DockerClient
         return this.build(dockerFolder, null);
     }
 
-    public InputStream build(File dockerFolder, String tag) throws DockerException {
+	public InputStream build(File dockerFolder, String tag) throws DockerException {
         Preconditions.checkNotNull(dockerFolder, "Folder is null");
         Preconditions.checkArgument(dockerFolder.exists(), "Folder %s doesn't exist", dockerFolder);
         Preconditions.checkState(new File(dockerFolder, "Dockerfile").exists(), "Dockerfile doesn't exist in " + dockerFolder);
@@ -383,6 +380,7 @@ public class DockerClient
 
         try {
             File dockerFile = new File(dockerFolder, "Dockerfile");
+            @SuppressWarnings("unchecked")
             List<String> dockerFileContent = FileUtils.readLines(dockerFile);
 
             if (dockerFileContent.size() <= 0) {

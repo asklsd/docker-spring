@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgi="http://www.springframework.org/schema/osgi"
+	xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:blueprint-compendium="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/osgi http://www.springframework.org/schema/osgi/spring-osgi.xsd">
+
+	<bean id="dockerTemplate" class="com.kpelykh.docker.client.DockerTemplate" autowire="constructor" />
+	<bean id="dockerClient" class="com.kpelykh.docker.client.DockerClient">
+        <blueprint-compendium:managed-properties persistent-id="dockerClient" autowire-on-update="true" />
+        <property name="dockerDeamonUrl" value="http://localhost:4243" />
+	</bean>
+
+	<osgi:service ref="dockerTemplate" interface="com.kpelykh.docker.client.DockerOperations" />
+
+</beans>

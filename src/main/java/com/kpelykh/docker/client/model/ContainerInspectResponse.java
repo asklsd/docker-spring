@@ -4,6 +4,7 @@ package com.kpelykh.docker.client.model;
 import org.codehaus.jackson.annotate.JsonProperty;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -61,7 +62,7 @@ public class ContainerInspectResponse {
         @JsonProperty("Gateway") public String gateway;
         @JsonProperty("Bridge") public String bridge;
         @JsonProperty("PortMapping") public Map<String,Map<String, String>> portMapping;
-        @JsonProperty("Ports") public Map<String, String> ports;
+        @JsonProperty("Ports") public Map<String, HostPortBinding[]> ports;
 
 		@Override
 		public String toString() {

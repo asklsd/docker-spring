@@ -1,6 +1,7 @@
 package com.kpelykh.docker.client.model;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.codehaus.jackson.annotate.JsonProperty;
@@ -13,9 +14,10 @@ import org.codehaus.jackson.annotate.JsonProperty;
 public class ContainerConfig {
 
 	@JsonProperty("Hostname")     private String    hostName = "";
+    @JsonProperty("Name")         private String    name;
     @JsonProperty("Domainname")   private String    domainName = "";
     @JsonProperty("PortSpecs")    private String[]  portSpecs;
-    @JsonProperty("ExposedPorts") private Map<String, Object> exposedPorts;
+    @JsonProperty("ExposedPorts") private Map<String, Map<String, String>> exposedPorts = new HashMap<String, Map<String, String>>();
     @JsonProperty("User")         private String    user = "";
     @JsonProperty("Tty")          private boolean   tty = false;
     @JsonProperty("OpenStdin")    private boolean   stdinOpen = false;
@@ -86,11 +88,11 @@ public class ContainerConfig {
         this.portSpecs = portSpecs;
     }
 
-    public Map<String, Object> getExposedPorts() {
+    public Map<String, Map<String, String>> getExposedPorts() {
     	return exposedPorts;
     }
     
-    public void setExposedPorts(Map<String, Object> exposedPorts) {
+    public void setExposedPorts(Map<String, Map<String, String>> exposedPorts) {
     	this.exposedPorts = exposedPorts;
     }
 
@@ -230,30 +232,25 @@ public class ContainerConfig {
         this.entrypoint = entrypoint;
     }
 
-    @Override
-    public String toString() {
-        return "ContainerConfig{" +
-                "hostName='" + hostName + '\'' +
-                ", domainName='" + domainName + '\'' +
-                ", portSpecs=" + Arrays.toString(portSpecs) +
-                ", exposedPorts=" + exposedPorts +
-                ", user='" + user + '\'' +
-                ", tty=" + tty +
-                ", stdinOpen=" + stdinOpen +
-                ", stdInOnce=" + stdInOnce +
-                ", memoryLimit=" + memoryLimit +
-                ", memorySwap=" + memorySwap +
-                ", cpuShares=" + cpuShares +
-                ", attachStdin=" + attachStdin +
-                ", attachStdout=" + attachStdout +
-                ", attachStderr=" + attachStderr +
-                ", env=" + Arrays.toString(env) +
-                ", cmd=" + Arrays.toString(cmd) +
-                ", dns=" + Arrays.toString(dns) +
-                ", image='" + image + '\'' +
-                ", volumes=" + volumes +
-                ", volumesFrom='" + volumesFrom + '\'' +
-                ", entrypoint='" + Arrays.toString(portSpecs) +
-                '}';
-    }
+    public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	@Override
+	public String toString() {
+		return "ContainerConfig [hostName=" + hostName + ", name=" + name + ", domainName=" + domainName
+				+ ", portSpecs=" + Arrays.toString(portSpecs) + ", exposedPorts=" + exposedPorts + ", user=" + user
+				+ ", tty=" + tty + ", stdinOpen=" + stdinOpen + ", stdInOnce=" + stdInOnce + ", memoryLimit="
+				+ memoryLimit + ", memorySwap=" + memorySwap + ", cpuShares=" + cpuShares + ", attachStdin="
+				+ attachStdin + ", attachStdout=" + attachStdout + ", attachStderr=" + attachStderr + ", env="
+				+ Arrays.toString(env) + ", cmd=" + Arrays.toString(cmd) + ", dns=" + Arrays.toString(dns) + ", image="
+				+ image + ", volumes=" + volumes + ", volumesFrom=" + volumesFrom + ", entrypoint="
+				+ Arrays.toString(entrypoint) + ", networkDisabled=" + networkDisabled + ", privileged=" + privileged
+				+ ", workingDir=" + workingDir + "]";
+	}
+
 }
