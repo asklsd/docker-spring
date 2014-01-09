@@ -54,9 +54,8 @@ import com.kpelykh.docker.client.model.Version;
 import com.kpelykh.docker.client.utils.CompressArchiveUtil;
 
 /**
- *
  * @author Konstantin Pelykh (kpelykh@gmail.com)
- *
+ * @author Florian Waibel (fwaibel@eclipsesource.com)
  */
 public class DockerClient
 {
@@ -203,16 +202,20 @@ public class DockerClient
 		return Arrays.asList(response);
     }
 
-    public ContainerCreateResponse createContainer(ContainerConfig config) throws DockerException {
+    public ContainerCreateResponse createContainer(ContainerConfig containerConfig) throws DockerException {
+		return createContainer(containerConfig, null);
+	}
+
+    public ContainerCreateResponse createContainer(ContainerConfig containerConfig, String containerName) throws DockerException {
     	final HttpHeaders requestHeaders = new HttpHeaders();
     	requestHeaders.setContentType(MediaType.APPLICATION_JSON);
     	requestHeaders.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-    	final HttpEntity<ContainerConfig> requestEntity = new HttpEntity<ContainerConfig>(config, requestHeaders);
+    	final HttpEntity<ContainerConfig> requestEntity = new HttpEntity<ContainerConfig>(containerConfig, requestHeaders);
 
     	ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		try {
-			new ObjectMapper().writeValue(outputStream, config);
-			System.out.println(new String(outputStream.toByteArray()));
+			new ObjectMapper().writeValue(outputStream, containerConfig);
+			LOGGER.debug("Creating a container with the following configuration: {}.", new String(outputStream.toByteArray()));
 		} catch (JsonGenerationException e1) {
 			e1.printStackTrace();
 		} catch (JsonMappingException e1) {
@@ -221,7 +224,11 @@ public class DockerClient
 			e1.printStackTrace();
 		}
 
-		String response = restTemplate.postForObject(dockerDeamonUrl + "/containers/create", requestEntity,
+		String containerParameter = "";
+		if (containerName != null) {
+			containerParameter = "?name=" + containerName;
+		}
+		String response = restTemplate.postForObject(dockerDeamonUrl + "/containers/create" + containerParameter, requestEntity,
 						String.class);
 		try {
 			return new ObjectMapper().readValue(response, ContainerCreateResponse.class);

@@ -1,10 +1,9 @@
 package com.kpelykh.docker.client;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
@@ -53,16 +52,21 @@ public class DockerTemplate implements DockerOperations {
 
 	@Override
 	public String create(String imageTag, int containerPort) {
+		return create(imageTag, null, containerPort);
+	}
+
+	private String createPortBindingKey(int containerPort) {
+		return Integer.toString(containerPort) + "/tcp";
+	}
+
+	public String create(String imageTag, String containerName, int containerPort) {
 		LOG.info("Creating new container from image '{}'...", imageTag);
 		ContainerConfig containerConfig = new ContainerConfig();
 		containerConfig.setHostName("localhost");
 		containerConfig.setImage(imageTag);
-		containerConfig.setPortSpecs(new String[] {"127.0.0.1:80:8080"});
-		// HashMap<String, String> hashMap = new HashMap<String, String>();
-		// hashMap.put("18001", "8080");
-		// containerConfig.getExposedPorts().put(Integer.toString(containerPort), hashMap);
+		containerConfig.getExposedPorts().put(createPortBindingKey(containerPort), null);
 		try {
-			ContainerCreateResponse response = dockerClient.createContainer(containerConfig);
+			ContainerCreateResponse response = dockerClient.createContainer(containerConfig, containerName);
 			LOG.info("Create container finished with: {}", response);
 			return response.getId();
 		} catch (DockerException e) {
@@ -73,24 +77,26 @@ public class DockerTemplate implements DockerOperations {
 	@Override
 	public void start(String containerId, int hostPort, int containerPort) {
 		LOG.info("Starting container '{}' with portmapping {}:{}", containerId, hostPort, containerPort);
-//		ContainerConfig containerConfig = new ContainerConfig();
-//		containerConfig.setHostName("localhost");
 		try {
 			HostConfig hostConfig = new HostConfig();
-//			Map<String, HostPortBinding[]> portBindings = hostConfig.getPortBindings();
-//			HostPortBinding[] portBindingForContainerPort = new HostPortBinding[1];
-//			portBindingForContainerPort[0] = new HostPortBinding("0.0.0.0", Integer.toString(hostPort));
-//			portBindings.put(Integer.toString(containerPort) + "/tcp", portBindingForContainerPort);
-//			LOG.info("Using host config: {}", hostConfig);
-//			try {
-//				new ObjectMapper().writeValue(new PrintWriter(System.out), hostConfig);
-//			} catch (JsonGenerationException e) {
-//				e.printStackTrace();
-//			} catch (JsonMappingException e) {
-//				e.printStackTrace();
-//			} catch (IOException e) {
-//				e.printStackTrace();
-//			}
+			Map<String, HostPortBinding[]> portBindings = hostConfig.getPortBindings();
+			HostPortBinding[] portBindingForContainerPort = new HostPortBinding[1];
+			portBindingForContainerPort[0] = new HostPortBinding("0.0.0.0", Integer.toString(hostPort));
+			portBindings.put(createPortBindingKey(containerPort), portBindingForContainerPort);
+			LOG.debug("Using host config: {}", hostConfig);
+
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			try {
+				new ObjectMapper().writeValue(outputStream, hostConfig);
+				LOG.debug("Using host config (JSON): {}.", new String(outputStream.toByteArray()));
+			} catch (JsonGenerationException e1) {
+				e1.printStackTrace();
+			} catch (JsonMappingException e1) {
+				e1.printStackTrace();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+
 			dockerClient.startContainer(containerId, hostConfig);
 			LOG.info("Container start successfully triggered.");
 		} catch (DockerException e) {

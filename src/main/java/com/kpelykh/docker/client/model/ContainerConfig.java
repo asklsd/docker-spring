@@ -17,7 +17,7 @@ public class ContainerConfig {
     @JsonProperty("Name")         private String    name;
     @JsonProperty("Domainname")   private String    domainName = "";
     @JsonProperty("PortSpecs")    private String[]  portSpecs;
-    @JsonProperty("ExposedPorts") private Map<String, Map<String, String>> exposedPorts = new HashMap<String, Map<String, String>>();
+    @JsonProperty("ExposedPorts") private Map<String, Map<String, HostPortBinding>> exposedPorts = new HashMap<String, Map<String, HostPortBinding>>();
     @JsonProperty("User")         private String    user = "";
     @JsonProperty("Tty")          private boolean   tty = false;
     @JsonProperty("OpenStdin")    private boolean   stdinOpen = false;
@@ -88,11 +88,11 @@ public class ContainerConfig {
         this.portSpecs = portSpecs;
     }
 
-    public Map<String, Map<String, String>> getExposedPorts() {
+    public Map<String, Map<String, HostPortBinding>> getExposedPorts() {
     	return exposedPorts;
     }
     
-    public void setExposedPorts(Map<String, Map<String, String>> exposedPorts) {
+    public void setExposedPorts(Map<String, Map<String, HostPortBinding>> exposedPorts) {
     	this.exposedPorts = exposedPorts;
     }
 
