@@ -7,8 +7,6 @@ import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.io.filefilter.RegexFileFilter;
 import org.apache.commons.lang.StringUtils;
 
-import com.google.common.base.FinalizablePhantomReference;
-
 import java.io.*;
 import java.util.Collection;
 
