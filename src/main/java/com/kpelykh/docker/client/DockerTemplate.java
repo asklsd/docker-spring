@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 import org.codehaus.jackson.JsonGenerationException;
@@ -18,7 +17,8 @@ import com.kpelykh.docker.client.model.ContainerConfig;
 import com.kpelykh.docker.client.model.ContainerCreateResponse;
 import com.kpelykh.docker.client.model.ContainerInspectResponse;
 import com.kpelykh.docker.client.model.HostConfig;
-import com.kpelykh.docker.client.model.HostPortBinding;
+import com.kpelykh.docker.client.model.Ports;
+import com.kpelykh.docker.client.model.Ports.Port;
 
 public class DockerTemplate implements DockerOperations {
 
@@ -79,10 +79,8 @@ public class DockerTemplate implements DockerOperations {
 		LOG.info("Starting container '{}' with portmapping {}:{}", containerId, hostPort, containerPort);
 		try {
 			HostConfig hostConfig = new HostConfig();
-			Map<String, HostPortBinding[]> portBindings = hostConfig.getPortBindings();
-			HostPortBinding[] portBindingForContainerPort = new HostPortBinding[1];
-			portBindingForContainerPort[0] = new HostPortBinding("0.0.0.0", Integer.toString(hostPort));
-			portBindings.put(createPortBindingKey(containerPort), portBindingForContainerPort);
+			Ports ports = hostConfig.getPortBindings();
+			ports.addPort(new Port(null, Integer.toString(containerPort), "0.0.0.0", Integer.toString(hostPort)));
 			LOG.debug("Using host config: {}", hostConfig);
 
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -121,11 +119,35 @@ public class DockerTemplate implements DockerOperations {
 		ContainerInspectResponse response;
 		try {
 			response = dockerClient.inspectContainer(containerName);
-			return response.state.running;
+			return response.getState().running;
 		} catch (DockerException e) {
 			throw new RuntimeException("Failed to query the docker daemon.");
 		} catch (HttpClientErrorException e) {
 			throw new IllegalArgumentException("Container '" + containerName + "' does not exist.");
+		}
+	}
+
+	public void stop(String containerId) {
+		try {
+			dockerClient.stopContainer(containerId);
+		} catch (DockerException e) {
+			throw new RuntimeException("Failed to query the docker daemon.");
+		}
+	}
+
+	public void wait(String containerId) {
+		try {
+			dockerClient.waitContainer(containerId);
+		} catch (DockerException e) {
+			throw new RuntimeException("Failed to query the docker daemon.");
+		}
+	}
+
+	public void remove(String containerId) {
+		try {
+			dockerClient.removeContainer(containerId);
+		} catch (DockerException e) {
+			throw new RuntimeException("Failed to query the docker daemon.");
 		}
 	}
 

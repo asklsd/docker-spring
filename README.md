@@ -12,7 +12,7 @@ with the Docker Server.
 
 Java API client for [Docker](http://docs.docker.io/ "Docker")
 
-Supports a subset of the Docker Client API v1.7, Docker Server version 0.7.2
+Supports a subset of the Docker Client API v1.8, Docker Server version 0.8.1
 
 ## Build with Maven
 
@@ -22,53 +22,49 @@ Supports a subset of the Docker Client API v1.7, Docker Server version 0.7.2
 * Maven 3.0.5
 * Docker daemon running
 
-By default Maven will run tests during build process. Tests are using localhost instance of Docker, make sure that
-you have Docker running, or the tests.
-
-* Since version 0.6, Docker is using unix socket for communication, however java client works over TCP/IP, so you need to
-make sure that your Docker server is listening on TCP/IP port.*
-
-Run docker:
-
-    $ sudo docker -H=tcp://127.0.0.1:4243 -d
-
-Make sure that docker is up:
-    
-    $ docker -H=tcp://127.0.0.1:4243 version
-
-Client version: 0.7.2
-Go version (client): go1.2
-Git commit (client): 28b162e
-Server version: 0.7.2
-Git commit (server): 28b162e
-Go version (server): go1.2
-Last stable version: 0.7.2
-
-Run build with tests:
-
-    $ mvn clean install
+Maven will run tests during build process. Tests are using localhost instance of Docker, make sure that
+you have Docker running for tests to work or just turn off tests.
 
 If you don't have Docker running locally, you can skip tests with -DskipTests flag set to true:
 
     $ mvn clean install -DskipTests=true
 
-## Docker Java Client usage:
+By default Docker server is using UNIX sockets for communication with the Docker client, however docker-java
+client uses TCP/IP to connect to the Docker server, so you will need to make sure that your Docker server is
+listening on TCP port. To allow Docker server to use TCP add the following line to /etc/default/docker
 
-To use Java Docker client, include dependency into your pom.xml:
+    DOCKER_OPTS="-H tcp://127.0.0.1:4243 -H unix:///var/run/docker.sock"
+
+More details setting up docket server can be found in official documentation: http://docs.docker.io/en/latest/use/basics/
+
+Now make sure that docker is up:
+    
+    $ docker -H tcp://127.0.0.1:4243 version
+
+    Client version: 0.8.1
+    Go version (client): go1.2
+    Git commit (client): a1598d1
+    Server version: 0.8.1
+    Git commit (server): a1598d1
+    Go version (server): go1.2
+    Last stable version: 0.8.1
+
+Run build with tests:
+
+    $ mvn clean install
+
+## Docker-Spring maven dependency:
 
     <dependency>
           <groupId>com.kpelykh</groupId>
           <artifactId>docker-spring</artifactId>
-          <version>0.7.2-SNAPSHOT</version>
+          <version>0.8.1</version>
     </dependency>
 
-*Currently Docker Java client is not available in Maven Central, so you will need to install it to a local
-repository, before you can use it in your projects.*
-    
+
 ## Example code snippets:
 
     DockerClient dockerClient = new DockerClient("http://localhost:4243");
-
 
 ###### Get Docker info:
 
@@ -93,7 +89,11 @@ repository, before you can use it in your projects.*
 
     dockerClient.stopContainer(container.id);
     
-    
+
+##### Support for UNIX sockets:
+
+    Support for UNIX socket should appear in docker-java pretty soon. I'm working on its integration.
+
 ##### Docker Builder:
 
 To use Docker Builder, as described on page http://docs.docker.io/en/latest/use/builder/,

@@ -3,8 +3,6 @@ package com.kpelykh.docker.client.model;
 
 import org.codehaus.jackson.annotate.JsonProperty;
 
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -14,61 +12,224 @@ import java.util.Map;
  */
 public class ContainerInspectResponse {
 
-    @JsonProperty("ID") public String id;
-    @JsonProperty("Name") public String name;
-    @JsonProperty("Created") public String created;
-    @JsonProperty("Path") public String path;
-    @JsonProperty("HostnamePath") public String hostnamePath;
-    @JsonProperty("HostConfig") public HostConfig hostConfig;
-    @JsonProperty("HostsPath") public String hostsPath;
-    @JsonProperty("Args") public String[] args;
-    @JsonProperty("Config") public ContainerConfig config;
-    @JsonProperty("State") public ContainerState state;
-    @JsonProperty("Image") public String image;
-    @JsonProperty("NetworkSettings") public NetworkSettings networkSettings;
-    @JsonProperty("SysInitPath") public String sysInitPath;
-    @JsonProperty("ResolvConfPath") public String resolvConfPath;
-    @JsonProperty("Volumes") public Map<String, String> volumes;
-    @JsonProperty("VolumesRW") public Map<String, String> volumesRW;
-    @JsonProperty("Driver") public String driver;
+    @JsonProperty("ID")
+    private String id;
 
-    @Override
-    public String toString() {
-        return "ContainerInspectResponse{" +
-                "volumes=" + volumes +
-                ", volumesRW=" + volumesRW + '\'' +
-                ", resolvConfPath='" + resolvConfPath + '\'' +
-                ", sysInitPath='" + sysInitPath + '\'' +
-                ", id='" + id + '\'' +
-                ", name='" + name + '\'' +
-                ", created='" + created + '\'' +
-                ", path='" + path + '\'' +
-                ", hostnamePath='" + hostnamePath + '\'' +
-                ", hostsPath='" + hostsPath + '\'' +
-                ", args=" + Arrays.toString(args) +
-                ", config=" + config +
-                ", hostConfig=" + hostConfig +
-                ", state=" + state +
-                ", image='" + image + '\'' +
-                ", networkSettings=" + networkSettings +
-                ", driver='" + driver + '\'' +
-                '}';
+    @JsonProperty("Created")
+    private String created;
+
+    @JsonProperty("Path")
+    private String path;
+
+    @JsonProperty("Args")
+    private String[] args;
+
+    @JsonProperty("Config")
+    public ContainerConfig config;
+
+    @JsonProperty("State")
+    private ContainerState state;
+
+    @JsonProperty("Image")
+    private String image;
+
+    @JsonProperty("NetworkSettings")
+    private NetworkSettings networkSettings;
+
+    @JsonProperty("SysInitPath")
+    private String sysInitPath;
+
+    @JsonProperty("ResolvConfPath")
+    private String resolvConfPath;
+
+    @JsonProperty("Volumes")
+    private Map<String, String> volumes;
+
+    @JsonProperty("VolumesRW")
+    private Map<String, String> volumesRW;
+
+    @JsonProperty("HostnamePath")
+    private String hostnamePath;
+
+    @JsonProperty("HostsPath")
+    private String hostsPath;
+
+    @JsonProperty("Name")
+    private String name;
+
+    @JsonProperty("Driver")
+    private String driver;
+
+    @JsonProperty("ExecDriver")
+    private String execDriver;
+    
+    @JsonProperty("HostConfig")
+    private HostConfig hostConfig;
+
+    public String getId() {
+        return id;
     }
 
-    public class NetworkSettings {
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getCreated() {
+        return created;
+    }
+
+    public void setCreated(String created) {
+        this.created = created;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public String[] getArgs() {
+        return args;
+    }
+
+    public void setArgs(String[] args) {
+        this.args = args;
+    }
+
+    public ContainerConfig getConfig() {
+        return config;
+    }
+
+    public void setConfig(ContainerConfig config) {
+        this.config = config;
+    }
+
+    public ContainerState getState() {
+        return state;
+    }
+
+    public void setState(ContainerState state) {
+        this.state = state;
+    }
+
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
+    }
+
+    public NetworkSettings getNetworkSettings() {
+        return networkSettings;
+    }
+
+    public void setNetworkSettings(NetworkSettings networkSettings) {
+        this.networkSettings = networkSettings;
+    }
+
+    public String getSysInitPath() {
+        return sysInitPath;
+    }
+
+    public void setSysInitPath(String sysInitPath) {
+        this.sysInitPath = sysInitPath;
+    }
+
+    public String getResolvConfPath() {
+        return resolvConfPath;
+    }
+
+    public void setResolvConfPath(String resolvConfPath) {
+        this.resolvConfPath = resolvConfPath;
+    }
+
+    public Map<String, String> getVolumes() {
+        return volumes;
+    }
+
+    public void setVolumes(Map<String, String> volumes) {
+        this.volumes = volumes;
+    }
+
+    public Map<String, String> getVolumesRW() {
+        return volumesRW;
+    }
+
+    public void setVolumesRW(Map<String, String> volumesRW) {
+        this.volumesRW = volumesRW;
+    }
+
+    public String getHostnamePath() {
+        return hostnamePath;
+    }
+
+    public void setHostnamePath(String hostnamePath) {
+        this.hostnamePath = hostnamePath;
+    }
+
+    public String getHostsPath() {
+        return hostsPath;
+    }
+
+    public void setHostsPath(String hostsPath) {
+        this.hostsPath = hostsPath;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDriver() {
+        return driver;
+    }
+
+    public void setDriver(String driver) {
+        this.driver = driver;
+    }
+
+    public HostConfig getHostConfig() {
+        return hostConfig;
+    }
+
+    public void setHostConfig(HostConfig hostConfig) {
+        this.hostConfig = hostConfig;
+    }
+
+    public String getExecDriver() {
+		return execDriver;
+	}
+
+	public void setExecDriver(String execDriver) {
+		this.execDriver = execDriver;
+	}
+
+	public class NetworkSettings {
 
         @JsonProperty("IPAddress") public String ipAddress;
         @JsonProperty("IPPrefixLen") public int ipPrefixLen;
         @JsonProperty("Gateway") public String gateway;
         @JsonProperty("Bridge") public String bridge;
         @JsonProperty("PortMapping") public Map<String,Map<String, String>> portMapping;
-        @JsonProperty("Ports") public Map<String, HostPortBinding[]> ports;
+        @JsonProperty("Ports") public Ports ports;
 
-		@Override
-		public String toString() {
-			return "NetworkSettings [ipAddress=" + ipAddress + ", ipPrefixLen=" + ipPrefixLen + ", gateway=" + gateway
-					+ ", bridge=" + bridge + ", portMapping=" + portMapping + ", ports=" + ports + "]";
-		}
+        @Override
+        public String toString() {
+            return "NetworkSettings{" +
+                    "ports=" + ports +
+                    ", portMapping=" + portMapping +
+                    ", bridge='" + bridge + '\'' +
+                    ", gateway='" + gateway + '\'' +
+                    ", ipPrefixLen=" + ipPrefixLen +
+                    ", ipAddress='" + ipAddress + '\'' +
+                    '}';
+        }
     }
 
     public class ContainerState {
@@ -77,8 +238,8 @@ public class ContainerInspectResponse {
         @JsonProperty("Pid") public int pid;
         @JsonProperty("ExitCode") public int exitCode;
         @JsonProperty("StartedAt") public String startedAt;
-        @JsonProperty("FinishedAt") public String finishedAt;
         @JsonProperty("Ghost") public boolean ghost;
+        @JsonProperty("FinishedAt") private String finishedAt;
 
         @Override
         public String toString() {
@@ -87,10 +248,11 @@ public class ContainerInspectResponse {
                     ", pid=" + pid +
                     ", exitCode=" + exitCode +
                     ", startedAt='" + startedAt + '\'' +
-                    ", finishedAt='" + finishedAt + '\'' +
                     ", ghost=" + ghost +
+                    ", finishedAt='" + finishedAt + '\'' +
                     '}';
         }
     }
 
 }
+

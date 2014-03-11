@@ -108,7 +108,7 @@ public final class Preconditions {
      *     this happen)
      */
     public static void checkArgument(boolean expression,
-                                      String errorMessageTemplate,
+                                     String errorMessageTemplate,
                                      Object... errorMessageArgs) {
         if (!expression) {
             throw new IllegalArgumentException(

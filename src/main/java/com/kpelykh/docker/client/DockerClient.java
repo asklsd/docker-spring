@@ -14,6 +14,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.google.common.base.Preconditions;
+import com.kpelykh.docker.client.utils.CompressArchiveUtil;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -37,7 +40,6 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResponseExtractor;
 import org.springframework.web.client.RestTemplate;
 
-import com.google.common.base.Preconditions;
 import com.kpelykh.docker.client.model.ChangeLog;
 import com.kpelykh.docker.client.model.CommitConfig;
 import com.kpelykh.docker.client.model.Container;
@@ -47,11 +49,11 @@ import com.kpelykh.docker.client.model.ContainerInspectResponse;
 import com.kpelykh.docker.client.model.ContainerWaitResponse;
 import com.kpelykh.docker.client.model.HostConfig;
 import com.kpelykh.docker.client.model.Image;
+import com.kpelykh.docker.client.model.ImageCreateResponse;
 import com.kpelykh.docker.client.model.ImageInspectResponse;
 import com.kpelykh.docker.client.model.Info;
 import com.kpelykh.docker.client.model.SearchItem;
 import com.kpelykh.docker.client.model.Version;
-import com.kpelykh.docker.client.utils.CompressArchiveUtil;
 
 /**
  * @author Konstantin Pelykh (kpelykh@gmail.com)
@@ -62,9 +64,9 @@ public class DockerClient
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DockerClient.class);
 
-    private RestTemplate restTemplate;
-
     private String dockerDeamonUrl;
+    
+    private RestTemplate restTemplate;
 
     // info and version return ContentType text/plain which is ignored by the MJHMC by default.
 	private RestTemplate textRestTemplate;
@@ -85,6 +87,11 @@ public class DockerClient
 		supportedMediaTypes.add(new MediaType("text", "plain"));
 		messageConverters.add(converter);
 		converter.setSupportedMediaTypes(supportedMediaTypes);
+
+		//Experimental support for unix sockets:
+        //client = new UnixSocketClient(clientConfig);
+//        client.addFilter(new JsonClientFilter());        
+//        client.addFilter(new LoggingFilter());
     }
 
     public void setDockerDeamonUrl(String dockerDeamonUrl) {
@@ -134,6 +141,42 @@ public class DockerClient
         restTemplate.exchange(dockerDeamonUrl
 				+ "/images/create?tag={tag}&fromImage={fromImage}&registry={registry}", HttpMethod.POST, null, String.class, params);
     }
+
+    /**
+     * Create an image by importing the given stream of a tar file.
+     *
+     * @param repository the repository to import to
+     * @param tag any tag for this image
+     * @param imageStream the InputStream of the tar file
+     * @return an {@link ImageCreateResponse} containing the id of the imported image
+     * @throws DockerException if the import fails for some reason.
+     */
+    // TODO - migrate new API
+/*
+    public ImageCreateResponse importImage(String repository, String tag, InputStream imageStream) throws DockerException {
+        Preconditions.checkNotNull(repository, "Repository was not specified");
+        Preconditions.checkNotNull(imageStream, "imageStream was not provided");
+
+        MultivaluedMap<String,String> params = new MultivaluedMapImpl();
+        params.add("repo", repository);
+        params.add("tag", tag);
+        params.add("fromSrc","-");
+
+        WebResource webResource = client.resource(restEndpointUrl + "/images/create").queryParams(params);
+
+        try {
+            LOGGER.trace("POST: {}", webResource);
+            return webResource.accept(MediaType.APPLICATION_OCTET_STREAM_TYPE).post(ImageCreateResponse.class,imageStream);
+
+        } catch (UniformInterfaceException exception) {
+            if (exception.getResponse().getStatus() == 500) {
+                throw new DockerException("Server error.", exception);
+            } else {
+                throw new DockerException(exception);
+            }
+        }
+    }
+ */
 
     public List<SearchItem> search(String search) throws DockerException {
 		SearchItem[] response = restTemplate.getForObject(dockerDeamonUrl + "/images/search?term={search}", SearchItem[].class, search);
@@ -197,11 +240,6 @@ public class DockerClient
      ** CONTAINERS API
      **/
 
-    public List<Container> listContainers(boolean listAll) {
-		Container[] response = restTemplate.getForObject(dockerDeamonUrl + "/containers/json?all={all}", Container[].class, listAll);
-		return Arrays.asList(response);
-    }
-
     public ContainerCreateResponse createContainer(ContainerConfig containerConfig) throws DockerException {
 		return createContainer(containerConfig, null);
 	}
@@ -239,6 +277,39 @@ public class DockerClient
 		} catch (IOException e) {
 			throw new IllegalStateException(e);
 		}
+    }
+
+    public List<Container> listContainers(boolean listAll) {
+		Container[] response = restTemplate.getForObject(dockerDeamonUrl + "/containers/json?all={all}", Container[].class, listAll);
+		return Arrays.asList(response);
+    }
+
+    public List<Container> listContainers(boolean allContainers, boolean latest) {
+        return this.listContainers(allContainers, latest, -1, false, null, null);
+    }
+
+    public List<Container> listContainers(boolean allContainers, boolean latest, int limit) {
+        return this.listContainers(allContainers, latest, limit, false, null, null);
+    }
+
+    public List<Container> listContainers(boolean allContainers, boolean latest, int limit, boolean showSize) {
+        return this.listContainers(allContainers, latest, limit, showSize, null, null);
+    }
+
+    public List<Container> listContainers(boolean allContainers, boolean latest, int limit, boolean showSize, String since) {
+        return this.listContainers(allContainers, latest, limit, false, since, null);
+    }
+
+    public List<Container> listContainers(boolean allContainers, boolean latest, int limit, boolean showSize, String since, String before) {
+    	Map<String,String> params = new HashMap<String, String>();
+        params.put("limit", latest ? "1" : String.valueOf(limit));
+        params.put("all", allContainers ? "1" : "0");
+        params.put("since", since);
+        params.put("before", before);
+        params.put("size", showSize ? "1" : "0");
+
+		Container[] response = restTemplate.getForObject(dockerDeamonUrl + "/containers/json", Container[].class, params);
+		return Arrays.asList(response);
     }
 
     public void startContainer(String containerId) throws DockerException {
@@ -345,16 +416,17 @@ public class DockerClient
         }
 
     }
+
     public String commit(CommitConfig commitConfig) throws DockerException {
-        Preconditions.checkNotNull(commitConfig.container, "Container ID was not specified");
+        Preconditions.checkNotNull(commitConfig.getContainer(), "Container ID was not specified");
 
         Map<String,String> params = new HashMap<String, String>();
-        params.put("container", commitConfig.container);
-        params.put("repo", commitConfig.repo);
-        params.put("tag", commitConfig.tag);
-        params.put("m", commitConfig.message);
-        params.put("author", commitConfig.author);
-        params.put("run", commitConfig.run);
+        params.put("container", commitConfig.getContainer());
+        params.put("repo", commitConfig.getRepo());
+        params.put("tag", commitConfig.getTag());
+        params.put("m", commitConfig.getMessage());
+        params.put("author", commitConfig.getAuthor());
+        params.put("run", commitConfig.getRun());
 
         String response = restTemplate.postForObject(dockerDeamonUrl + "/commit?container={container}&repo={repo}&tag={tag}&m={m}&author={author}&run={run}",
         		null, String.class, params);
@@ -373,8 +445,12 @@ public class DockerClient
     public InputStream build(File dockerFolder) throws DockerException {
         return this.build(dockerFolder, null);
     }
+    
+    public InputStream build(File dockerFolder, String tag) throws DockerException {
+    	return this.build(dockerFolder, null, false);
+    }
 
-	public InputStream build(File dockerFolder, String tag) throws DockerException {
+    public InputStream build(File dockerFolder, String tag, boolean noCache) throws DockerException {
         Preconditions.checkNotNull(dockerFolder, "Folder is null");
         Preconditions.checkArgument(dockerFolder.exists(), "Folder %s doesn't exist", dockerFolder);
         Preconditions.checkState(new File(dockerFolder, "Dockerfile").exists(), "Dockerfile doesn't exist in " + dockerFolder);
@@ -401,7 +477,7 @@ public class DockerClient
             FileUtils.copyFileToDirectory(dockerFile, tmpDockerContextFolder);
 
             for (String cmd : dockerFileContent) {
-                if (StringUtils.startsWithIgnoreCase(cmd.trim(), "ADD")) {
+                if (StringUtils.startsWithIgnoreCase(cmd.trim(), "ADD ")) {
                     String addArgs[] = StringUtils.split(cmd, " \t");
                     if (addArgs.length != 3) {
                         throw new DockerException(String.format("Wrong format on line [%s]", cmd));

@@ -1,45 +1,116 @@
 package com.kpelykh.docker.client.model;
 
-import java.util.Arrays;
-
 import org.codehaus.jackson.annotate.JsonProperty;
 
+import java.util.Arrays;
+
 /**
- * 
+ *
  * @author Konstantin Pelykh (kpelykh@gmail.com)
- * 
+ *
  */
 public class Image {
 
-	@JsonProperty("RepoTags")
-	public String[] repoTags;
+    @JsonProperty("Id")
+    private String id;
 
-	@JsonProperty("Repository")
-	public String repository;
+    @JsonProperty("RepoTags")
+    private String[] repoTags;
 
-	@JsonProperty("Tag")
-	public String tag;
+    @JsonProperty("Repository")
+    private String repository;
 
-	@JsonProperty("Id")
-	public String id;
+    @JsonProperty("Tag")
+    private String tag;
 
-	@JsonProperty("Created")
-	public long created;
 
-	@JsonProperty("Size")
-	public long size;
+    @JsonProperty("ParentId")
+    private String parentId;
 
-	@JsonProperty("VirtualSize")
-	public long virtualSize;
+    @JsonProperty("Created")
+    private long created;
 
-	@JsonProperty("ParentId")
-	public String parentId;
+    @JsonProperty("Size")
+    private long size;
 
-	@Override
-	public String toString() {
-		return "Image{" + "repoTags='" + Arrays.toString(repoTags) + '\'' + ", repository='" + repository + '\''
-				+ ", tag='" + tag + '\'' + ", id='" + id + '\'' + ", created=" + created + ", size=" + size
-				+ ", parentId='" + parentId + '\'' + ", virtualSize=" + virtualSize + '}';
-	}
+    @JsonProperty("VirtualSize")
+    private long virtualSize;
 
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String[] getRepoTags() {
+        return repoTags;
+    }
+
+    public void setRepoTags(String[] repoTags) {
+        this.repoTags = repoTags;
+    }
+
+    public String getRepository() {
+        return repository;
+    }
+
+    public void setRepository(String repository) {
+        this.repository = repository;
+    }
+
+    public String getTag() {
+        return tag;
+    }
+
+    public void setTag(String tag) {
+        this.tag = tag;
+    }
+
+    public String getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(String parentId) {
+        this.parentId = parentId;
+    }
+
+    public long getCreated() {
+        return created;
+    }
+
+    public void setCreated(long created) {
+        this.created = created;
+    }
+
+    public long getSize() {
+        return size;
+    }
+
+    public void setSize(long size) {
+        this.size = size;
+    }
+
+    public long getVirtualSize() {
+        return virtualSize;
+    }
+
+    public void setVirtualSize(long virtualSize) {
+        this.virtualSize = virtualSize;
+    }
+
+    @Override
+    public String toString() {
+        return "Image{" +
+                "virtualSize=" + virtualSize +
+                ", id='" + id + '\'' +
+                ", repoTags=" + Arrays.toString(repoTags) +
+                ", repository='" + repository + '\'' +
+                ", tag='" + tag + '\'' +
+                ", parentId='" + parentId + '\'' +
+                ", created=" + created +
+                ", size=" + size +
+                '}';
+    }
 }

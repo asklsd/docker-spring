@@ -9,69 +9,77 @@ import org.codehaus.jackson.annotate.JsonProperty;
  */
 public class CommitConfig {
 
-    @JsonProperty("container") public String container;
-    @JsonProperty("repo") public String repo;
-    @JsonProperty("tag") public String tag;
-    @JsonProperty("m") public String message;
+    @JsonProperty("container")
+    private String container;
+
+    @JsonProperty("repo")
+    private String repo;
+
+    @JsonProperty("tag")
+    private String tag;
+
+    @JsonProperty("m")
+    private String message;
 
     //author (eg. “John Hannibal Smith <hannibal@a-team.com>”)
-    @JsonProperty("author") public String author;
+    @JsonProperty("author")
+    private String author;
 
     //config automatically applied when the image is run. (ex: {“Cmd”: [“cat”, “/world”], “PortSpecs”:[“22”]})
-    @JsonProperty("run") public String run;
+    @JsonProperty("run")
+    private String run;
 
-
-    public CommitConfig() {}
-
-    public CommitConfig(Builder builder) {
-        this.container = builder.container;
-        this.repo = builder.repo;
-        this.tag = builder.tag;
-        this.message = builder.message;
-        this.author = builder.author;
-        this.run = builder.run;
+    public String getContainer() {
+        return container;
     }
 
-    public static class Builder {
-        private String container;
-        private String repo;
-        private String tag;
-        private String message;
-        private String author;
-        private String run;
+    public String getRepo() {
+        return repo;
+    }
 
-        public Builder(String containerId) {
-            this.container = containerId;
-        }
+    public String getTag() {
+        return tag;
+    }
 
-        public Builder repo(String repo) {
-            this.repo = repo;
-            return this;
-        }
+    public String getMessage() {
+        return message;
+    }
 
-        public Builder tag(String tag) {
-            this.tag = tag;
-            return this;
-        }
+    public String getAuthor() {
+        return author;
+    }
 
-        public Builder message(String message) {
-            this.message = message;
-            return this;
-        }
+    public String getRun() {
+        return run;
+    }
 
-        public Builder author(String author) {
-            this.author = author;
-            return this;
-        }
+    public CommitConfig setRepo(String repo) {
+        this.repo = repo;
+        return this;
+    }
 
-        public Builder run(String run) {
-            this.run = run;
-            return this;
-        }
+    public CommitConfig setTag(String tag) {
+        this.tag = tag;
+        return this;
+    }
 
-        public CommitConfig build() {
-            return new CommitConfig(this);
-        }
+    public CommitConfig setMessage(String message) {
+        this.message = message;
+        return this;
+    }
+
+    public CommitConfig setAuthor(String author) {
+        this.author = author;
+        return this;
+    }
+
+    public CommitConfig setRun(String run) {
+        this.run = run;
+        return this;
+    }
+
+    public CommitConfig(String container) {
+        this.container = container;
     }
 
 }
