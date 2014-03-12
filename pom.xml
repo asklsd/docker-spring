@@ -45,7 +45,7 @@
     </developers>
 
 	<properties>
-        <skipTests>false</skipTests>
+        <skipTests>true</skipTests>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jdk.debug>true</jdk.debug>
