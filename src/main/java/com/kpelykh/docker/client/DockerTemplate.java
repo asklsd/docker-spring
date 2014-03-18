@@ -50,15 +50,11 @@ public class DockerTemplate implements DockerOperations {
 		return "Failed to capture the build log. Please consult the logfiles for more information.";
 	}
 
-	@Override
-	public String create(String imageTag, int containerPort) {
-		return create(imageTag, null, containerPort);
-	}
-
 	private String createPortBindingKey(int containerPort) {
 		return Integer.toString(containerPort) + "/tcp";
 	}
 
+	@Override
 	public String create(String imageTag, String containerName, int containerPort) {
 		LOG.info("Creating new container from image '{}'...", imageTag);
 		ContainerConfig containerConfig = new ContainerConfig();
@@ -80,7 +76,9 @@ public class DockerTemplate implements DockerOperations {
 		try {
 			HostConfig hostConfig = new HostConfig();
 			Ports ports = hostConfig.getPortBindings();
-			ports.addPort(new Port(null, Integer.toString(containerPort), "0.0.0.0", Integer.toString(hostPort)));
+			System.out.println(ports);
+			ports.addPort(new Port("tcp", Integer.toString(containerPort), "0.0.0.0", Integer.toString(hostPort)));
+			System.out.println(ports);
 			LOG.debug("Using host config: {}", hostConfig);
 
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();

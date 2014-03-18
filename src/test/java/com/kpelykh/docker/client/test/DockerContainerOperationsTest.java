@@ -19,7 +19,7 @@ public class DockerContainerOperationsTest {
 	@Test
 	public void shouldBeAbleToCreateAndStartContainer() throws Exception {
 
-		String containerId = uut.create(IMAGE_NAME, 8080);
+		String containerId = uut.create(IMAGE_NAME, null, 8080);
 		uut.start(containerId, 18090, 8080);
 
 		uut.stop(containerId);
@@ -28,7 +28,7 @@ public class DockerContainerOperationsTest {
 
 	@Test
 	public void shouldBeAbleToInspectCreatedContainer() {
-		String containerId = uut.create(IMAGE_NAME, 8080);
+		String containerId = uut.create(IMAGE_NAME, null, 8080);
 
 		assertFalse(uut.isRunning(containerId));
 
@@ -37,7 +37,7 @@ public class DockerContainerOperationsTest {
 
 	@Test
 	public void shouldBeAbleToInspectRunningContainer() {
-		String containerId = uut.create(IMAGE_NAME, 8080);
+		String containerId = uut.create(IMAGE_NAME, null, 8080);
 		uut.start(containerId, 18091, 8080);
 
 		assertTrue(uut.isRunning(containerId));
