@@ -1,6 +1,7 @@
 package com.kpelykh.docker.client.model;
 
 
+import java.util.Arrays;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -14,7 +15,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ContainerInspectResponse {
 
-    @JsonProperty("ID")
+    @JsonProperty("Id")
     private String id;
 
     @JsonProperty("Created")
@@ -27,7 +28,7 @@ public class ContainerInspectResponse {
     private String[] args;
 
     @JsonProperty("Config")
-    public ContainerConfig config;
+    private ContainerConfig config;
 
     @JsonProperty("State")
     private ContainerState state;
@@ -268,5 +269,30 @@ public class ContainerInspectResponse {
                     '}';
         }
     }
+
+	@Override
+	public String toString() {
+		return "ContainerInspectResponse{"
+				+ "id=" + id
+				+ ", created=" + created
+				+ ", path=" + path
+				+ ", args=" + Arrays.toString(args)
+				+ ", config=" + config 
+				+ ", state=" + state 
+				+ ", imageId=" + imageId 
+				+ ", networkSettings=" + networkSettings
+				+ ", sysInitPath=" + sysInitPath 
+				+ ", resolvConfPath=" + resolvConfPath 
+				+ ", volumes=" + volumes 
+				+ ", volumesRW=" + volumesRW 
+				+ ", hostnamePath=" + hostnamePath 
+				+ ", hostsPath=" + hostsPath 
+				+ ", name=" + name 
+				+ ", driver=" + driver
+				+ ", hostConfig=" + hostConfig 
+				+ ", execDriver=" + execDriver 
+				+ ", mountLabel=" + mountLabel 
+				+ "}";
+	}
 
 }

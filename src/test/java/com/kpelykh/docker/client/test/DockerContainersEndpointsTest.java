@@ -21,6 +21,7 @@ import com.kpelykh.docker.client.NotFoundException;
 import com.kpelykh.docker.client.model.Container;
 import com.kpelykh.docker.client.model.ContainerConfig;
 import com.kpelykh.docker.client.model.ContainerCreateResponse;
+import com.kpelykh.docker.client.model.ContainerInspectResponse;
 
 // https://docs.docker.com/reference/api/docker_remote_api_v1.12/#21-containers
 public class DockerContainersEndpointsTest extends AbstractDockerClientTest {
@@ -78,6 +79,56 @@ public class DockerContainersEndpointsTest extends AbstractDockerClientTest {
 		containerConfig.setCmd(new String[] { "true" });
 
 		dockerClient.createContainer(containerConfig);
+	}
+
+	@Test
+	public void shouldBeAbleToInspectFreshlyStartedContainer() throws DockerException {
+
+		ContainerConfig containerConfig = new ContainerConfig();
+		containerConfig.setImage("busybox");
+		containerConfig.setCmd(new String[] { "true" });
+
+		ContainerCreateResponse busyboxContainer = dockerClient.createContainer(containerConfig);
+		tmpContainers.add(busyboxContainer.getId());
+
+		dockerClient.startContainer(busyboxContainer.getId());
+
+		ContainerInspectResponse containerInspectResponse = dockerClient.inspectContainer(busyboxContainer.getId());
+		LOG.info("Container Inspect: {}", containerInspectResponse.toString());
+
+		assertThat(containerInspectResponse.getConfig(), is(notNullValue()));
+		assertThat(containerInspectResponse.getId(), not(isEmptyString()));
+		assertThat(containerInspectResponse.getId(), startsWith(busyboxContainer.getId()));
+		assertThat(containerInspectResponse.getImageId(), not(isEmptyString()));
+		assertThat(containerInspectResponse.getState(), is(notNullValue()));
+		if (!containerInspectResponse.getState().running) {
+			// container already finished the "true" command -> we can check the exit code
+			assertThat(containerInspectResponse.getState().exitCode, is(0));
+		}
+	}
+
+	@Test
+	public void shouldBeAbleInspectStoppedContainer() throws DockerException {
+
+		ContainerConfig containerConfig = new ContainerConfig();
+		containerConfig.setImage("busybox");
+		containerConfig.setCmd(new String[] { "true" });
+
+		ContainerCreateResponse busyboxContainer = dockerClient.createContainer(containerConfig);
+		tmpContainers.add(busyboxContainer.getId());
+
+		dockerClient.startContainer(busyboxContainer.getId());
+		int exitCode = dockerClient.waitContainer(busyboxContainer.getId()).getStatusCode();
+		LOG.info("Container exit code: {}", exitCode);
+
+		assertThat(exitCode, equalTo(0));
+
+		ContainerInspectResponse containerInspectResponse = dockerClient.inspectContainer(busyboxContainer.getId());
+		LOG.info("Container Inspect: {}", containerInspectResponse.toString());
+
+		assertThat(containerInspectResponse.getState().running, is(equalTo(false)));
+		assertThat(containerInspectResponse.getState().exitCode, is(equalTo(exitCode)));
+
 	}
 
 }

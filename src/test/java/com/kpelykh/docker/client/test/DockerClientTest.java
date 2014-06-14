@@ -135,62 +135,6 @@ public class DockerClientTest extends AbstractDockerClientTest {
      */
 
     @Test
-    public void shouldBeAbleToStartAndInspectFreshlyCreatedContainer() throws DockerException {
-
-        ContainerConfig containerConfig = new ContainerConfig();
-        containerConfig.setImage("busybox");
-        containerConfig.setCmd(new String[]{"true"});
-
-        ContainerCreateResponse container = dockerClient.createContainer(containerConfig);
-        tmpContainers.add(container.getId());
-
-        dockerClient.startContainer(container.getId());
-
-        ContainerInspectResponse containerInspectResponse = dockerClient.inspectContainer(container.getId());
-        LOG.info("Container Inspect: {}", containerInspectResponse.toString());
-
-        assertThat(containerInspectResponse.config, is(notNullValue()));
-        assertThat(containerInspectResponse.getId(), not(isEmptyString()));
-
-        assertThat(containerInspectResponse.getId(), startsWith(container.getId()));
-
-        assertThat(containerInspectResponse.getImageId(), not(isEmptyString()));
-        assertThat(containerInspectResponse.getState(), is(notNullValue()));
-
-        assertThat(containerInspectResponse.getState().running, is(true));
-
-        if (!containerInspectResponse.getState().running) {
-            assertThat(containerInspectResponse.getState().exitCode, is(equalTo(0)));
-        }
-
-    }
-
-    @Test
-    public void shouldBeAbleToWaitForContainerToExitAndInspectStoppedContainer() throws DockerException {
-
-        ContainerConfig containerConfig = new ContainerConfig();
-        containerConfig.setImage("busybox");
-        containerConfig.setCmd(new String[]{"true"});
-
-        ContainerCreateResponse container = dockerClient.createContainer(containerConfig);
-        tmpContainers.add(container.getId());
-
-        dockerClient.startContainer(container.getId());
-
-        int exitCode = dockerClient.waitContainer(container.getId()).getStatusCode();
-        LOG.info("Container exit code: {}", exitCode);
-
-        assertThat(exitCode, equalTo(0));
-
-        ContainerInspectResponse containerInspectResponse = dockerClient.inspectContainer(container.getId());
-        LOG.info("Container Inspect: {}", containerInspectResponse.toString());
-
-        assertThat(containerInspectResponse.getState().running, is(equalTo(false)));
-        assertThat(containerInspectResponse.getState().exitCode, is(equalTo(exitCode)));
-
-    }
-
-    @Test
     public void shouldBeAbleToAttachToContainerAndGetLogs() throws DockerException, IOException {
 
         String snippet = "hello world";
