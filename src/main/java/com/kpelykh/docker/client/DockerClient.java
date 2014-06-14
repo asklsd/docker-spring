@@ -39,6 +39,7 @@ import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResponseExtractor;
 import org.springframework.web.client.RestTemplate;
 
@@ -48,6 +49,7 @@ import com.kpelykh.docker.client.model.Container;
 import com.kpelykh.docker.client.model.ContainerConfig;
 import com.kpelykh.docker.client.model.ContainerCreateResponse;
 import com.kpelykh.docker.client.model.ContainerInspectResponse;
+import com.kpelykh.docker.client.model.ContainerTopResponse;
 import com.kpelykh.docker.client.model.ContainerWaitResponse;
 import com.kpelykh.docker.client.model.HostConfig;
 import com.kpelykh.docker.client.model.Image;
@@ -264,8 +266,7 @@ public class DockerClient {
 		}
 		String response = null;
 		try {
-			response = restTemplate.postForObject(dockerDeamonUrl + "/containers/create" + containerParameter, requestEntity,
-					String.class);
+			response = restTemplate.postForObject(dockerDeamonUrl + "/containers/create" + containerParameter, requestEntity, String.class);
 		} catch (HttpClientErrorException cause) {
 			if (cause.getStatusCode() == HttpStatus.NOT_FOUND) {
 				throw new NotFoundException("Image '" + containerConfig.getImage() + "' not found.", cause);
@@ -327,6 +328,19 @@ public class DockerClient {
 
 	public ContainerInspectResponse inspectContainer(String containerId) throws DockerException {
 		return restTemplate.getForObject(dockerDeamonUrl + "/containers/{containerId}/json", ContainerInspectResponse.class, containerId);
+	}
+
+	public ContainerTopResponse top(String containerId) throws DockerException {
+		try {
+			return restTemplate.getForObject(dockerDeamonUrl + "/containers/{containerId}/top", ContainerTopResponse.class, containerId);
+		} catch (HttpClientErrorException caught) {
+			if (caught.getStatusCode() == HttpStatus.NOT_FOUND) {
+				throw new NotFoundException("Failed to list processes for container '" + containerId + "'", caught);
+			}
+			throw new DockerException("Failed to list processes for container '" + containerId + "'", caught);
+		} catch (HttpServerErrorException caught) {
+			throw new DockerException("Failed to list processes for container '" + containerId + "'. Maybe the container is not running.", caught);
+		}
 	}
 
 	public void removeContainer(String container) throws DockerException {

@@ -22,6 +22,7 @@ import com.kpelykh.docker.client.model.Container;
 import com.kpelykh.docker.client.model.ContainerConfig;
 import com.kpelykh.docker.client.model.ContainerCreateResponse;
 import com.kpelykh.docker.client.model.ContainerInspectResponse;
+import com.kpelykh.docker.client.model.ContainerTopResponse;
 
 // https://docs.docker.com/reference/api/docker_remote_api_v1.12/#21-containers
 public class DockerContainersEndpointsTest extends AbstractDockerClientTest {
@@ -36,11 +37,8 @@ public class DockerContainersEndpointsTest extends AbstractDockerClientTest {
 
 		int size = containers.size();
 
-		ContainerConfig containerConfig = new ContainerConfig();
-		containerConfig.setImage("busybox");
-		containerConfig.setCmd(new String[] { "echo" });
+		ContainerCreateResponse busyboxContainer = createBusybox("echo");
 
-		ContainerCreateResponse busyboxContainer = dockerClient.createContainer(containerConfig);
 		dockerClient.startContainer(busyboxContainer.getId());
 		tmpContainers.add(busyboxContainer.getId());
 
@@ -60,16 +58,11 @@ public class DockerContainersEndpointsTest extends AbstractDockerClientTest {
 
 	@Test
 	public void shouldBeAbleToCreateNewContainerForExistingImage() throws DockerException {
-		ContainerConfig containerConfig = new ContainerConfig();
-		containerConfig.setImage("busybox");
-		containerConfig.setCmd(new String[] { "true" });
 
-		ContainerCreateResponse container = dockerClient.createContainer(containerConfig);
-		LOG.info("Created container {} with id {}", container.toString(), container.getId());
+		ContainerCreateResponse busyboxContainer = createBusybox();
 
-		assertThat(container.getId(), not(isEmptyString()));
+		assertThat(busyboxContainer.getId(), not(isEmptyString()));
 
-		tmpContainers.add(container.getId());
 	}
 
 	@Test(expected = NotFoundException.class)
@@ -84,17 +77,12 @@ public class DockerContainersEndpointsTest extends AbstractDockerClientTest {
 	@Test
 	public void shouldBeAbleToInspectFreshlyStartedContainer() throws DockerException {
 
-		ContainerConfig containerConfig = new ContainerConfig();
-		containerConfig.setImage("busybox");
-		containerConfig.setCmd(new String[] { "true" });
-
-		ContainerCreateResponse busyboxContainer = dockerClient.createContainer(containerConfig);
-		tmpContainers.add(busyboxContainer.getId());
+		ContainerCreateResponse busyboxContainer = createBusybox();
 
 		dockerClient.startContainer(busyboxContainer.getId());
 
 		ContainerInspectResponse containerInspectResponse = dockerClient.inspectContainer(busyboxContainer.getId());
-		LOG.info("Container Inspect: {}", containerInspectResponse.toString());
+		LOG.info("Container Inspect: {}", containerInspectResponse);
 
 		assertThat(containerInspectResponse.getConfig(), is(notNullValue()));
 		assertThat(containerInspectResponse.getId(), not(isEmptyString()));
@@ -110,12 +98,7 @@ public class DockerContainersEndpointsTest extends AbstractDockerClientTest {
 	@Test
 	public void shouldBeAbleInspectStoppedContainer() throws DockerException {
 
-		ContainerConfig containerConfig = new ContainerConfig();
-		containerConfig.setImage("busybox");
-		containerConfig.setCmd(new String[] { "true" });
-
-		ContainerCreateResponse busyboxContainer = dockerClient.createContainer(containerConfig);
-		tmpContainers.add(busyboxContainer.getId());
+		ContainerCreateResponse busyboxContainer = createBusybox();
 
 		dockerClient.startContainer(busyboxContainer.getId());
 		int exitCode = dockerClient.waitContainer(busyboxContainer.getId()).getStatusCode();
@@ -124,11 +107,49 @@ public class DockerContainersEndpointsTest extends AbstractDockerClientTest {
 		assertThat(exitCode, equalTo(0));
 
 		ContainerInspectResponse containerInspectResponse = dockerClient.inspectContainer(busyboxContainer.getId());
-		LOG.info("Container Inspect: {}", containerInspectResponse.toString());
+		LOG.info("Container Inspect: {}", containerInspectResponse);
 
 		assertThat(containerInspectResponse.getState().running, is(equalTo(false)));
 		assertThat(containerInspectResponse.getState().exitCode, is(equalTo(exitCode)));
 
+	}
+
+	@Test
+	public void shouldBeAbleToListProcessesInRunningContainer() throws Exception {
+		ContainerCreateResponse busyboxContainer = createBusybox("sleep 60");
+		dockerClient.startContainer(busyboxContainer.getId());
+
+		ContainerTopResponse containerTopResponse = dockerClient.top(busyboxContainer.getId());
+		LOG.info("Container Top:  {}", containerTopResponse);
+
+		assertThat(containerTopResponse.getProcesses().length, is(1));
+	}
+
+	@Test(expected = DockerException.class)
+	public void shouldNotBeAbleToListProcessesWhenContainerIsNotStarted() throws Exception {
+		ContainerCreateResponse busyboxContainer = createBusybox("sleep 60");
+
+		dockerClient.top(busyboxContainer.getId());
+	}
+
+	@Test(expected = NotFoundException.class)
+	public void shouldNotBeAbleToListProcessesInNonExistingContainer() throws Exception {
+		dockerClient.top("id_does_not_exist");
+	}
+
+	private ContainerCreateResponse createBusybox() throws DockerException {
+		return createBusybox("true");
+	}
+
+	private ContainerCreateResponse createBusybox(String cmd) throws DockerException {
+		ContainerConfig containerConfig = new ContainerConfig();
+		containerConfig.setImage("busybox");
+		containerConfig.setCmd(new String[] { cmd });
+
+		ContainerCreateResponse container = dockerClient.createContainer(containerConfig);
+		tmpContainers.add(container.getId());
+		LOG.info("Created container {} with id {}", container, container.getId());
+		return container;
 	}
 
 }
