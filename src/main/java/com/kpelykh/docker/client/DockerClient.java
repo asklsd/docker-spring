@@ -399,19 +399,19 @@ public class DockerClient {
 	}
 
 	public void stopContainer(String containerId) throws DockerException {
-		this.stopContainer(containerId, 10);
+		this.stopContainer(containerId, 10); // wait 10 seconds before killing the container
 	}
 
 	public void stopContainer(String containerId, int timeout) throws DockerException {
 		restTemplate.postForLocation(dockerDeamonUrl + "/containers/{containerId}/stop?t={timeout}", null, containerId, timeout);
 	}
 
-	public void kill(String containerId) throws DockerException {
-		restTemplate.postForLocation(dockerDeamonUrl + "/containers/{containerId}/kill", null, containerId);
+	public void restart(String containerId, int timeout) throws DockerException {
+		restTemplate.postForLocation(dockerDeamonUrl + "/containers/{containerId}/restart?t={timeout}", null, containerId, timeout);
 	}
 
-	public void restart(String containerId, int timeout) throws DockerException {
-		restTemplate.postForLocation(dockerDeamonUrl + "/containers/{containerId}/restart", null, containerId);
+	public void kill(String containerId) throws DockerException {
+		restTemplate.postForLocation(dockerDeamonUrl + "/containers/{containerId}/kill", null, containerId);
 	}
 
 	private static class CommitResponse {
