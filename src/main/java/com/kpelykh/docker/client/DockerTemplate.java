@@ -55,7 +55,7 @@ public class DockerTemplate implements DockerOperations {
 	}
 
 	@Override
-	public String create(String imageTag, String containerName, int containerPort) {
+	public String createContainer(String imageTag, String containerName, int containerPort) {
 		LOG.info("Creating new container from image '{}'...", imageTag);
 		ContainerConfig containerConfig = new ContainerConfig();
 		containerConfig.setHostName("localhost");

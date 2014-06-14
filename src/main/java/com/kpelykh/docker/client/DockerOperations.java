@@ -18,7 +18,7 @@ public interface DockerOperations {
 	 * @param containerPort to expose.
 	 * @return The id of the created container.
 	 */
-	String create(String imageTag, String containerName, int containerPort);
+	String createContainer(String imageTag, String containerName, int containerPort);
 
 	/**
 	 * Start a container.
