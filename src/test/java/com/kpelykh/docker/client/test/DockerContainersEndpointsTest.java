@@ -33,8 +33,8 @@ import com.kpelykh.docker.client.model.ContainerTopResponse;
 // https://docs.docker.com/reference/api/docker_remote_api_v1.12/#21-containers
 public class DockerContainersEndpointsTest extends AbstractDockerClientTest {
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public void shouldListContainers() throws DockerException {
 
 		List<Container> containers = dockerClient.listContainers(true);
@@ -83,7 +83,7 @@ public class DockerContainersEndpointsTest extends AbstractDockerClientTest {
 	@Test
 	public void shouldBeAbleToInspectFreshlyStartedContainer() throws DockerException {
 
-		ContainerCreateResponse busyboxContainer = createBusybox();
+		ContainerCreateResponse busyboxContainer = createBusybox("sleep", "60");
 
 		dockerClient.startContainer(busyboxContainer.getId());
 
@@ -95,10 +95,7 @@ public class DockerContainersEndpointsTest extends AbstractDockerClientTest {
 		assertThat(containerInspectResponse.getId(), startsWith(busyboxContainer.getId()));
 		assertThat(containerInspectResponse.getImageId(), not(isEmptyString()));
 		assertThat(containerInspectResponse.getState(), is(notNullValue()));
-		if (!containerInspectResponse.getState().running) {
-			// container already finished the "true" command -> we can check the exit code
-			assertThat(containerInspectResponse.getState().exitCode, is(0));
-		}
+		assertThat(containerInspectResponse.getState().running, is(true));
 	}
 
 	@Test
@@ -180,6 +177,80 @@ public class DockerContainersEndpointsTest extends AbstractDockerClientTest {
         ChangeLog testChangeLog = selectUnique(filesystemDiff, hasField("path", equalTo("/test")));
         assertThat(testChangeLog, hasField("path", equalTo("/test")));
         assertThat(testChangeLog, hasField("kind", equalTo(1)));
+    }
+
+    @Test
+    public void testStopContainer() throws DockerException {
+
+    	ContainerCreateResponse busyboxContainer = createBusybox(new String[] {"sleep", "60"});
+        dockerClient.startContainer(busyboxContainer.getId());
+
+        LOG.info("Stopping container: {}", busyboxContainer.getId());
+        dockerClient.stopContainer(busyboxContainer.getId(), 2); // 2 seconds timeout
+
+        ContainerInspectResponse containerInspectResponse = dockerClient.inspectContainer(busyboxContainer.getId());
+
+        assertThat(containerInspectResponse.getState().running, is(false));
+        assertThat(containerInspectResponse.getState().exitCode, not(equalTo(0)));
+    }
+
+    @Test
+    public void restartContainer() throws DockerException {
+
+    	ContainerCreateResponse busyboxContainer = createBusybox(new String[] {"sleep", "60"});
+        dockerClient.startContainer(busyboxContainer.getId());
+
+        ContainerInspectResponse containerInspectResponse = dockerClient.inspectContainer(busyboxContainer.getId());
+        String startTime = containerInspectResponse.getState().startedAt;
+
+        dockerClient.restart(busyboxContainer.getId(), 2);
+
+        ContainerInspectResponse containerInspectResponse2 = dockerClient.inspectContainer(busyboxContainer.getId());
+        String startTime2 = containerInspectResponse2.getState().startedAt;
+
+        assertThat(startTime, not(equalTo(startTime2)));
+
+        assertThat(containerInspectResponse.getState().running, is(equalTo(true)));
+    }
+
+    @Test
+    public void testKillContainer() throws DockerException {
+
+    	ContainerCreateResponse busyboxContainer = createBusybox(new String[] {"sleep", "60"});
+    	dockerClient.startContainer(busyboxContainer.getId());
+
+        LOG.info("Killing container: {}", busyboxContainer.getId());
+        dockerClient.kill(busyboxContainer.getId());
+
+        ContainerInspectResponse containerInspectResponse = dockerClient.inspectContainer(busyboxContainer.getId());
+        LOG.info("Container Inspect: {}", containerInspectResponse.toString());
+
+        assertThat(containerInspectResponse.getState().running, is(false));
+        assertThat(containerInspectResponse.getState().exitCode, not(equalTo(0)));
+    }
+
+	@Test
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+    public void removeContainer() throws DockerException {
+
+        ContainerConfig containerConfig = new ContainerConfig();
+        containerConfig.setImage("busybox");
+        containerConfig.setCmd(new String[] {"true"});
+
+        ContainerCreateResponse container = dockerClient.createContainer(containerConfig);
+
+        dockerClient.startContainer(container.getId());
+        dockerClient.waitContainer(container.getId());
+        tmpContainers.add(container.getId());
+
+        LOG.info("Removing container: {}", container.getId());
+        dockerClient.removeContainer(container.getId());
+        tmpContainers.remove(container.getId());
+
+        List containers2 = dockerClient.listContainers(true);
+        Matcher matcher = not(hasItem(hasField("id", startsWith(container.getId()))));
+        assertThat(containers2, matcher);
+
     }
 
 	private ContainerCreateResponse createBusybox() throws DockerException {
