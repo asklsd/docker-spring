@@ -16,14 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonGenerationException;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Preconditions;
-import com.kpelykh.docker.client.utils.CompressArchiveUtil;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -38,11 +30,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.DefaultResponseErrorHandler;
 import org.springframework.web.client.ResponseExtractor;
 import org.springframework.web.client.RestTemplate;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Preconditions;
 import com.kpelykh.docker.client.model.ChangeLog;
 import com.kpelykh.docker.client.model.CommitConfig;
 import com.kpelykh.docker.client.model.Container;
@@ -58,6 +55,7 @@ import com.kpelykh.docker.client.model.ImageInspectResponse;
 import com.kpelykh.docker.client.model.Info;
 import com.kpelykh.docker.client.model.SearchItem;
 import com.kpelykh.docker.client.model.Version;
+import com.kpelykh.docker.client.utils.CompressArchiveUtil;
 
 /**
  * @author Konstantin Pelykh (kpelykh@gmail.com)
@@ -79,9 +77,31 @@ public class DockerClient {
 		this("http://localhost:4243");
 	}
 
+	private class DockerDaemonResponseErrorHandler extends DefaultResponseErrorHandler {
+		@Override
+		public boolean hasError(ClientHttpResponse response) throws IOException {
+			if (response.getStatusCode() == HttpStatus.NOT_FOUND) {
+				return true;
+			}
+			return super.hasError(response);
+		}
+
+		@Override
+		public void handleError(ClientHttpResponse response) throws IOException {
+			if (response.getStatusCode() == HttpStatus.NOT_FOUND) {
+				throw new NotFoundException("Image or container not found.");
+			}
+			if (response.getStatusCode() == HttpStatus.INTERNAL_SERVER_ERROR) {
+				throw new DockerException();
+			}
+			super.handleError(response);
+		}
+	}
+
 	public DockerClient(String serverUrl) {
 		dockerDeamonUrl = serverUrl;
 		restTemplate = new RestTemplate();
+		restTemplate.setErrorHandler(new DockerDaemonResponseErrorHandler());
 
 		textRestTemplate = new RestTemplate();
 		List<HttpMessageConverter<?>> messageConverters = textRestTemplate.getMessageConverters();
@@ -186,15 +206,7 @@ public class DockerClient {
 	public void removeImage(String imageId) throws DockerException {
 		Preconditions.checkState(!StringUtils.isEmpty(imageId), "Image ID can't be empty");
 
-		try {
-			restTemplate.delete(dockerDeamonUrl + "/images/{imageId}", imageId);
-		} catch (HttpClientErrorException e) {
-			if (e.getStatusCode().equals(HttpStatus.NOT_FOUND)) {
-				LOGGER.warn("Ignoring deletion of non existing image {}", imageId);
-				return;
-			}
-			throw e;
-		}
+		restTemplate.delete(dockerDeamonUrl + "/images/{imageId}", imageId);
 	}
 
 	public void removeImages(List<String> images) throws DockerException {
@@ -265,15 +277,7 @@ public class DockerClient {
 			containerParameter = "?name=" + containerName;
 		}
 		String response = null;
-		try {
-			response = restTemplate.postForObject(dockerDeamonUrl + "/containers/create" + containerParameter, requestEntity, String.class);
-		} catch (HttpClientErrorException cause) {
-			if (cause.getStatusCode() == HttpStatus.NOT_FOUND) {
-				throw new NotFoundException("Image '" + containerConfig.getImage() + "' not found.", cause);
-			} else {
-				throw new DockerException(cause);
-			}
-		}
+		response = restTemplate.postForObject(dockerDeamonUrl + "/containers/create" + containerParameter, requestEntity, String.class);
 		try {
 			return new ObjectMapper().readValue(response, ContainerCreateResponse.class);
 		} catch (JsonParseException e) {
@@ -331,16 +335,7 @@ public class DockerClient {
 	}
 
 	public ContainerTopResponse top(String containerId) throws DockerException {
-		try {
-			return restTemplate.getForObject(dockerDeamonUrl + "/containers/{containerId}/top", ContainerTopResponse.class, containerId);
-		} catch (HttpClientErrorException caught) {
-			if (caught.getStatusCode() == HttpStatus.NOT_FOUND) {
-				throw new NotFoundException("Failed to list processes for container '" + containerId + "'", caught);
-			}
-			throw new DockerException("Failed to list processes for container '" + containerId + "'", caught);
-		} catch (HttpServerErrorException caught) {
-			throw new DockerException("Failed to list processes for container '" + containerId + "'. Maybe the container is not running.", caught);
-		}
+		return restTemplate.getForObject(dockerDeamonUrl + "/containers/{containerId}/top", ContainerTopResponse.class, containerId);
 	}
 
 	public void removeContainer(String container) throws DockerException {
@@ -350,11 +345,7 @@ public class DockerClient {
 	public void removeContainer(String containerId, boolean removeVolumes) throws DockerException {
 		Preconditions.checkState(!StringUtils.isEmpty(containerId), "Container ID can't be empty");
 
-		try {
-			restTemplate.delete(dockerDeamonUrl + "/containers/{containerId}?v={removeVolumes}", containerId, removeVolumes ? "1" : "0");
-		} catch (HttpClientErrorException e) {
-			throw new DockerException(e);
-		}
+		restTemplate.delete(dockerDeamonUrl + "/containers/{containerId}?v={removeVolumes}", containerId, removeVolumes ? "1" : "0");
 	}
 
 	public void removeContainers(List<String> containers, boolean removeVolumes) throws DockerException {

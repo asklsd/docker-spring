@@ -16,6 +16,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.kpelykh.docker.client.DockerClient;
 import com.kpelykh.docker.client.DockerException;
+import com.kpelykh.docker.client.NotFoundException;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = { "SimpleServiceTest-context.xml" })
@@ -55,13 +56,23 @@ public abstract class AbstractDockerClientTest {
 	@After
 	public void afterMethod() {
 		for (String container : tmpContainers) {
-			LOG.info("Cleaning up temporary container " + container);
+			LOG.info("Cleaning up temporary container {}...", container);
 			try {
-				dockerClient.stopContainer(container);
-				dockerClient.kill(container);
-				dockerClient.removeContainer(container);
-			} catch (DockerException ignore) {
-				LOG.error("Error during cleanup of test", ignore);
+				try {
+					dockerClient.stopContainer(container);
+				} catch (NotFoundException ignore) {
+				}
+				try {
+					dockerClient.kill(container);
+				} catch (NotFoundException ignore) {
+				}
+				try {
+					dockerClient.removeContainer(container);
+				} catch (NotFoundException ignore) {
+				}
+				LOG.info("Container {} is removed.", container);
+			} catch (DockerException caught) {
+				LOG.error("Error during cleanup of container {}. Manual cleanup necessary!", container);
 			}
 		}
 
