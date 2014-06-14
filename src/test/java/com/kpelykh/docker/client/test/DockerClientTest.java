@@ -51,39 +51,6 @@ import com.kpelykh.docker.client.model.Version;
  */
 public class DockerClientTest extends AbstractDockerClientTest {
 
-    /*
-     * #########################
-     * ## INFORMATION TESTS ##
-     * #########################
-    */
-
-    @Test
-    public void testDockerVersion() throws DockerException {
-        Version version = dockerClient.version();
-        LOG.info(version.toString());
-
-        assertTrue(version.getGoVersion().length() > 0);
-        assertTrue(version.getVersion().length() > 0);
-
-        assertEquals(StringUtils.split(version.getVersion(), ".").length, 3);
-    }
-
-    @Test
-    public void testDockerInfo() throws DockerException {
-        Info dockerInfo = dockerClient.info();
-        LOG.info(dockerInfo.toString());
-
-        assertTrue(dockerInfo.toString().contains("containers"));
-        assertTrue(dockerInfo.toString().contains("images"));
-        assertTrue(dockerInfo.toString().contains("debug"));
-
-        assertTrue(dockerInfo.getContainers() > 0);
-        assertTrue(dockerInfo.getImages() > 0);
-        assertTrue(dockerInfo.getNFd() > 0);
-        assertTrue(dockerInfo.getNGoroutines() > 0);
-        assertTrue(dockerInfo.isMemoryLimit());
-    }
-
     @Test
     public void shouldFindBusyBoxImage() throws DockerException {
         List<SearchItem> dockerSearch = dockerClient.search("busybox");
