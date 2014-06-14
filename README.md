@@ -12,7 +12,9 @@ with the Docker Server.
 
 Java API client for [Docker](http://docs.docker.io/ "Docker")
 
-Supports a subset of the Docker Client API v1.8, Docker Server version 0.8.1
+Supports a subset of the Docker Client API v1.11, Docker Server version 0.11
+
+Developer forum for [docker-java](https://groups.google.com/forum/?hl=de#!forum/docker-java-dev "docker-java")
 
 ## Build with Maven
 
@@ -22,10 +24,11 @@ Supports a subset of the Docker Client API v1.8, Docker Server version 0.8.1
 * Maven 3.0.5
 * Docker daemon running
 
-Maven will run tests during build process. Tests are using localhost instance of Docker, make sure that
-you have Docker running for tests to work or just turn off tests.
+Maven may run tests during build process but tests are disabled by default. The tests are using a localhost instance of Docker, make sure that you have Docker running for tests to work. To run the tests you have to provide your https://www.docker.io/account/login/ information:
 
-If you don't have Docker running locally, you can skip tests with -DskipTests flag set to true:
+    $ mvn clean install -DskipTests=false -Ddocker.io.username=... -Ddocker.io.password=... -Ddocker.io.email=...
+
+You can skip tests with -DskipTests flag set to true:
 
     $ mvn clean install -DskipTests=true
 
@@ -38,7 +41,7 @@ listening on TCP port. To allow Docker server to use TCP add the following line 
 More details setting up docket server can be found in official documentation: http://docs.docker.io/en/latest/use/basics/
 
 Now make sure that docker is up:
-    
+
     $ docker -H tcp://127.0.0.1:4243 version
 
     Client version: 0.8.1
@@ -70,7 +73,7 @@ Run build with tests:
 
     Info info = dockerClient.info();
     System.out.print(info);
-    
+
 ###### Search Docker repository:
 
     List<SearchItem> dockerSearch = dockerClient.search("busybox");
@@ -121,6 +124,40 @@ user dockerClient.build(baseDir), where baseDir is a path to folder containing D
 
 For additional examples, please look at [DockerClientTest.java](https://github.com/kpelykh/docker-java/blob/master/src/test/java/com/kpelykh/docker/client/test/DockerClientTest.java "DockerClientTest.java")
 
+## Configuration
+
+There are a couple of configuration items, all of which have sensible defaults:
+
+* `url` The Docker URL, e.g. `http://localhost:4243`.
+* `version` The API version, e.g. `1.11`.
+* `username` Your repository username (required to push containers).
+* `password` Your repository password.
+* `email` Your repository email.
+
+There are three ways to configure, in descending order of precedence:
+
+##### Programatic:
+In your application, e.g.
+
+    DockerClient docker = new DockerClient("http://localhost:4243");
+    docker.setCredentials("dockeruser", "ilovedocker", "dockeruser@github.com");`
+
+##### System Properties:
+E.g.
+
+    java -Ddocker.io.username=kpelykh pkg.Main
+
+##### File System  
+In `$HOME/.docker.io.properties`, e.g.:
+
+    docker.io.username=dockeruser
+
+##### Class Path
+In the class path at `/docker.io.properties`, e.g.:
+
+    docker.io.url=http://localhost:4243
+    docker.io.version=1.11
+
 ## HowTo configure the DockerClient within Eclipse Virgo
 
 Put dockerClient.properties into the pickup folder of your Virgo installation.
@@ -128,3 +165,4 @@ Put dockerClient.properties into the pickup folder of your Virgo installation.
 -- snipp --
 dockerDeamonUrl=http://localhost:4243
 -- snapp --
+

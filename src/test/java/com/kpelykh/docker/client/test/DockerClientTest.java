@@ -23,24 +23,14 @@ import java.io.InputStream;
 import java.io.StringWriter;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.LineIterator;
 import org.apache.commons.lang.StringUtils;
 import org.hamcrest.Matcher;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import com.kpelykh.docker.client.DockerClient;
 import com.kpelykh.docker.client.DockerException;
 import com.kpelykh.docker.client.model.ChangeLog;
 import com.kpelykh.docker.client.model.CommitConfig;
@@ -59,44 +49,7 @@ import com.kpelykh.docker.client.model.Version;
  * Unit test for DockerClient.
  * @author Konstantin Pelykh (kpelykh@gmail.com)
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = { "SimpleServiceTest-context.xml" })
-public class DockerClientTest
-{
-    public static final Logger LOG = LoggerFactory.getLogger(DockerClientTest.class);
-
-    @Autowired
-    private DockerClient dockerClient;
-
-    private List<String> tmpImgs = new ArrayList<String>();
-    private List<String> tmpContainers = new ArrayList<String>();
-
-    @Before
-    public void beforeMethod() throws DockerException {
-        LOG.info("Creating image 'busybox'");
-        dockerClient.pull("busybox");
-    }
-
-    @After
-    public void afterMethod() {
-    	for (String container : tmpContainers) {
-    		LOG.info("Cleaning up temporary container " + container);
-    		try {
-    			dockerClient.stopContainer(container);
-    			dockerClient.kill(container);
-    			dockerClient.removeContainer(container);
-    		} catch (DockerException ignore) {}
-    	}
-
-        for (String image : tmpImgs) {
-            LOG.info("Cleaning up temporary image {}", image);
-            try {
-                dockerClient.removeImage(image);
-            } catch (DockerException ignore) {}
-        }
-
-        LOG.info("################################## END OF {} ##################################\n");
-    }
+public class DockerClientTest extends AbstractDockerClientTest {
 
     /*
      * #########################
@@ -249,7 +202,7 @@ public class DockerClientTest
 
         assertThat(containerInspectResponse.getId(), startsWith(container.getId()));
 
-        assertThat(containerInspectResponse.getImage(), not(isEmptyString()));
+        assertThat(containerInspectResponse.getImageId(), not(isEmptyString()));
         assertThat(containerInspectResponse.getState(), is(notNullValue()));
 
         assertThat(containerInspectResponse.getState().running, is(true));

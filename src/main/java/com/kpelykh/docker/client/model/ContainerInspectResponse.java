@@ -1,15 +1,17 @@
 package com.kpelykh.docker.client.model;
 
 
-import org.codehaus.jackson.annotate.JsonProperty;
-
 import java.util.Map;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  *
  * @author Konstantin Pelykh (kpelykh@gmail.com)
  *
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ContainerInspectResponse {
 
     @JsonProperty("ID")
@@ -31,7 +33,7 @@ public class ContainerInspectResponse {
     private ContainerState state;
 
     @JsonProperty("Image")
-    private String image;
+    private String imageId;
 
     @JsonProperty("NetworkSettings")
     private NetworkSettings networkSettings;
@@ -60,12 +62,15 @@ public class ContainerInspectResponse {
     @JsonProperty("Driver")
     private String driver;
 
-    @JsonProperty("ExecDriver")
-    private String execDriver;
-    
     @JsonProperty("HostConfig")
     private HostConfig hostConfig;
 
+    @JsonProperty("ExecDriver")
+    private String execDriver;
+    
+    @JsonProperty("MountLabel")
+    private String mountLabel;
+    
     public String getId() {
         return id;
     }
@@ -114,12 +119,12 @@ public class ContainerInspectResponse {
         this.state = state;
     }
 
-    public String getImage() {
-        return image;
+    public String getImageId() {
+        return imageId;
     }
 
-    public void setImage(String image) {
-        this.image = image;
+    public void setImageId(String image) {
+        this.imageId = image;
     }
 
     public NetworkSettings getNetworkSettings() {
@@ -201,16 +206,24 @@ public class ContainerInspectResponse {
     public void setHostConfig(HostConfig hostConfig) {
         this.hostConfig = hostConfig;
     }
-
+    
+    public void setExecDriver(String execDriver) {
+		this.execDriver = execDriver;
+	}
+    
     public String getExecDriver() {
 		return execDriver;
 	}
-
-	public void setExecDriver(String execDriver) {
-		this.execDriver = execDriver;
+    
+    public String getMountLabel() {
+		return mountLabel;
+	}
+    
+    public void setMountLabel(String mountLabel) {
+		this.mountLabel = mountLabel;
 	}
 
-	public class NetworkSettings {
+    public class NetworkSettings {
 
         @JsonProperty("IPAddress") public String ipAddress;
         @JsonProperty("IPPrefixLen") public int ipPrefixLen;
@@ -235,6 +248,7 @@ public class ContainerInspectResponse {
     public class ContainerState {
 
         @JsonProperty("Running") public boolean running;
+        @JsonProperty("Paused") public boolean paused;
         @JsonProperty("Pid") public int pid;
         @JsonProperty("ExitCode") public int exitCode;
         @JsonProperty("StartedAt") public String startedAt;
@@ -245,6 +259,7 @@ public class ContainerInspectResponse {
         public String toString() {
             return "ContainerState{" +
                     "running=" + running +
+                    "paused=" + paused +
                     ", pid=" + pid +
                     ", exitCode=" + exitCode +
                     ", startedAt='" + startedAt + '\'' +
@@ -255,4 +270,3 @@ public class ContainerInspectResponse {
     }
 
 }
-

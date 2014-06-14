@@ -1,6 +1,7 @@
 package com.kpelykh.docker.client.model;
 
-import org.codehaus.jackson.annotate.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -11,6 +12,7 @@ import java.util.Map;
  * @author Konstantin Pelykh (kpelykh@gmail.com)
  *
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ContainerConfig {
 
     @JsonProperty("Hostname")     private String    hostName = "";
@@ -29,7 +31,7 @@ public class ContainerConfig {
     @JsonProperty("Cmd")          private String[]  cmd;
     @JsonProperty("Dns")          private String[]  dns;
     @JsonProperty("Image")        private String    image;
-    @JsonProperty("Volumes")      private Object    volumes;
+    @JsonProperty("Volumes")      private BoundHostVolumes   volumes;
     @JsonProperty("VolumesFrom")  private String    volumesFrom = "";
     @JsonProperty("Entrypoint")   private String[]  entrypoint = new String[]{};
     @JsonProperty("NetworkDisabled") private boolean networkDisabled = false;
@@ -222,11 +224,11 @@ public class ContainerConfig {
         return this;
     }
 
-    public Object getVolumes() {
+    public BoundHostVolumes getVolumes() {
         return volumes;
     }
 
-    public ContainerConfig setVolumes(Object volumes) {
+    public ContainerConfig setVolumes(BoundHostVolumes volumes) {
         this.volumes = volumes;
         return this;
     }
@@ -248,14 +250,19 @@ public class ContainerConfig {
         this.entrypoint = entrypoint;
         return this;
     }
-
-    public String[] getOnBuild() {
-	return onBuild;
-    }
-
+    
     public void setOnBuild(String[] onBuild) {
-	this.onBuild=onBuild;
-    }
+		this.onBuild = onBuild;
+	}
+    
+    public String[] getOnBuild() {
+		return onBuild;
+	}
+    
+    public void setDomainName(String domainName) {
+		this.domainName = domainName;
+	}
+   
 
     @Override
     public String toString() {
@@ -283,6 +290,7 @@ public class ContainerConfig {
                 ", privileged=" + privileged +
                 ", workingDir='" + workingDir + '\'' +
                 ", domainName='" + domainName + '\'' +
+                ", onBuild='" + Arrays.toString(onBuild) + '\'' +
                 '}';
     }
 }

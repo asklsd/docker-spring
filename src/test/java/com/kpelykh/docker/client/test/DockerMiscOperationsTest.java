@@ -52,4 +52,10 @@ public class DockerMiscOperationsTest {
 		assertEquals(StringUtils.split(version.getVersion(), ".").length, 3);
 	}
 
+	@Test
+	public void shouldBeAbleToPingTheDockerDeamon() throws Exception {
+		int pingResult = dockerClient.ping();
+
+		assertEquals(200, pingResult);
+	}
 }
