@@ -17,6 +17,7 @@ import org.hamcrest.Matcher;
 import org.junit.Test;
 
 import com.kpelykh.docker.client.DockerException;
+import com.kpelykh.docker.client.NotFoundException;
 import com.kpelykh.docker.client.model.Container;
 import com.kpelykh.docker.client.model.ContainerConfig;
 import com.kpelykh.docker.client.model.ContainerCreateResponse;
@@ -24,6 +25,7 @@ import com.kpelykh.docker.client.model.ContainerCreateResponse;
 // https://docs.docker.com/reference/api/docker_remote_api_v1.12/#21-containers
 public class DockerContainersEndpointsTest extends AbstractDockerClientTest {
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	public void shouldListContainers() throws DockerException {
 
@@ -69,13 +71,13 @@ public class DockerContainersEndpointsTest extends AbstractDockerClientTest {
 		tmpContainers.add(container.getId());
 	}
 
-	@Test
+	@Test(expected = NotFoundException.class)
 	public void shouldNotBeAbleToCreateNewContainerForNonExistingImage() throws DockerException {
 		ContainerConfig containerConfig = new ContainerConfig();
 		containerConfig.setImage("does_ont_exist");
 		containerConfig.setCmd(new String[] { "true" });
 
-		ContainerCreateResponse container = dockerClient.createContainer(containerConfig);
+		dockerClient.createContainer(containerConfig);
 	}
 
 }
