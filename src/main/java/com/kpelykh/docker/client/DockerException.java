@@ -7,7 +7,7 @@ package com.kpelykh.docker.client;
  */
 
 @SuppressWarnings("serial")
-public class DockerException extends Exception {
+public class DockerException extends RuntimeException {
 
     public DockerException() {
     }
