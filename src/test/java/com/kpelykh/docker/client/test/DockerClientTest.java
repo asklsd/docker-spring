@@ -1,10 +1,8 @@
 package com.kpelykh.docker.client.test;
 
-import static ch.lambdaj.Lambda.filter;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isEmptyString;
@@ -33,11 +31,8 @@ import com.kpelykh.docker.client.model.CommitConfig;
 import com.kpelykh.docker.client.model.ContainerConfig;
 import com.kpelykh.docker.client.model.ContainerCreateResponse;
 import com.kpelykh.docker.client.model.ContainerInspectResponse;
-import com.kpelykh.docker.client.model.Image;
 import com.kpelykh.docker.client.model.ImageInspectResponse;
-import com.kpelykh.docker.client.model.Info;
 import com.kpelykh.docker.client.model.Ports;
-import com.kpelykh.docker.client.model.SearchItem;
 
 /**
  * Unit test for DockerClient.
@@ -45,105 +40,12 @@ import com.kpelykh.docker.client.model.SearchItem;
  */
 public class DockerClientTest extends AbstractDockerClientTest {
 
-    @Test
-    public void shouldFindBusyBoxImage() throws DockerException {
-        List<SearchItem> dockerSearch = dockerClient.search("busybox");
-        LOG.info("Search returned {}", dockerSearch.toString());
-
-        Matcher matcher = hasItem(hasField("name", equalTo("busybox")));
-        assertThat(dockerSearch, matcher);
-
-        assertThat(filter(hasField("name", is("busybox")), dockerSearch).size(), equalTo(1));
-    }
-
-    /*
-     * ###################
-     * ## LISTING TESTS ##
-     * ###################
-     */
-
-    /*
-    @Test
-    public void shouldBeAbleToFindAllImages() throws DockerException {
-    	List<Image> images = dockerClient.getImages(true);
-    	assertThat(images, notNullValue());
-    	LOG.info("Images List: " + images);
-    	Info info = dockerClient.info();
-
-    	assertThat(images.size(), equalTo(info.images));
-    }
-     */
-
-    @Test
-    public void shouldBeAbleToFindAndReadImages() throws DockerException {
-        List<Image> images = dockerClient.getImages(true);
-        assertThat(images, notNullValue());
-        LOG.info("Images List: {}", images);
-        Info info = dockerClient.info();
-
-        assertThat(images.size(), equalTo(info.getImages()));
-
-        Image img = images.get(0);
-        assertThat(img.getCreated(), is(greaterThan(0L)) );
-        assertThat(img.getVirtualSize(), is(greaterThan(0L)) );
-        assertThat(img.getId(), not(isEmptyString()));
-        assertThat(img.getTag(), not(isEmptyString()));
-        assertThat(img.getRepository(), not(isEmptyString()));
-    }
-
     /*
      * ##################
      * ## IMAGES TESTS ##
      * ##################
      * */
 
-    @Test
-    public void testPullImage() throws DockerException, IOException {
-
-        String testImage = "centos";
-
-        LOG.info("Removing image: {}", testImage);
-        dockerClient.removeImage(testImage);
-
-        Info info = dockerClient.info();
-        LOG.info("Client info: {}", info.toString());
-
-        int imgCount= info.getImages();
-
-        LOG.info("Pulling image: {}", testImage);
-
-/*
-        ClientResponse response = dockerClient.pull(testImage);
-
-        StringWriter logwriter = new StringWriter();
-
-        try {
-            LineIterator itr = IOUtils.lineIterator(response.getEntityInputStream(), "UTF-8");
-            while (itr.hasNext()) {
-                String line = itr.next();
-                logwriter.write(line + "\n");
-                LOG.info(line);
-            }
-        } finally {
-            IOUtils.closeQuietly(response.getEntityInputStream());
-        }
-
-        String fullLog = logwriter.toString();
-        assertThat(fullLog, containsString("Download complete"));
- */
-
-        tmpImgs.add(testImage);
-
-        info = dockerClient.info();
-        LOG.info("Client info after pull, {}", info.toString());
-
-        // TODO - check commented out assertion
-//        assertThat(imgCount, lessThan(info.getImages()));
-
-        ImageInspectResponse imageInspectResponse = dockerClient.inspectImage(testImage);
-        LOG.info("Image Inspect: {}", imageInspectResponse.toString());
-        assertThat(imageInspectResponse, notNullValue());
-    }
 
     //This test doesn't work in Ubuntu 12.04 due to
     //Error mounting '/dev/mapper/docker-8:5-...
