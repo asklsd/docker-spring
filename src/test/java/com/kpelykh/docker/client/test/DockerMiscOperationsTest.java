@@ -37,7 +37,7 @@ public class DockerMiscOperationsTest {
 		assertTrue(dockerInfo.getImages() > 0);
 		assertTrue(dockerInfo.getNFd() > 0);
 		assertTrue(dockerInfo.getNGoroutines() > 0);
-//		assertTrue(dockerInfo.memoryLimit);
+		assertTrue(dockerInfo.isMemoryLimit());
 	}
 
 	@Test
