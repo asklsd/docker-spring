@@ -11,8 +11,11 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.startsWith;
 import static org.testinfected.hamcrest.jpa.HasFieldWithValue.hasField;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
+import org.apache.commons.io.IOUtils;
 import org.hamcrest.Matcher;
 import org.junit.Test;
 
@@ -137,14 +140,36 @@ public class DockerContainersEndpointsTest extends AbstractDockerClientTest {
 		dockerClient.top("id_does_not_exist");
 	}
 
+    @Test
+    public void shouldBeAbleGetLogsFromStoppedContainer() throws DockerException, IOException {
+
+        String snippet = "hello world";
+
+        ContainerCreateResponse busyboxContainer = createBusybox(new String[] {"/bin/echo", snippet});
+
+        dockerClient.startContainer(busyboxContainer.getId());
+        tmpContainers.add(busyboxContainer.getId());
+
+        int exitCode = dockerClient.waitContainer(busyboxContainer.getId()).getStatusCode();
+
+        assertThat(exitCode, equalTo(0));
+
+        InputStream response = dockerClient.logContainer(busyboxContainer.getId());
+
+        String fullLog = IOUtils.toString(response);
+
+        LOG.info("Container log: {}", fullLog);
+//        assertThat(fullLog, endsWith(snippet));
+    }
+
 	private ContainerCreateResponse createBusybox() throws DockerException {
 		return createBusybox("true");
 	}
 
-	private ContainerCreateResponse createBusybox(String cmd) throws DockerException {
+	private ContainerCreateResponse createBusybox(String... cmd) throws DockerException {
 		ContainerConfig containerConfig = new ContainerConfig();
 		containerConfig.setImage("busybox");
-		containerConfig.setCmd(new String[] { cmd });
+		containerConfig.setCmd(cmd);
 
 		ContainerCreateResponse container = dockerClient.createContainer(containerConfig);
 		tmpContainers.add(container.getId());

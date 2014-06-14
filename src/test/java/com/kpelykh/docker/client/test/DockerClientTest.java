@@ -13,8 +13,6 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.startsWith;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.testinfected.hamcrest.jpa.HasFieldWithValue.hasField;
 
 import java.io.File;
@@ -43,7 +41,6 @@ import com.kpelykh.docker.client.model.ImageInspectResponse;
 import com.kpelykh.docker.client.model.Info;
 import com.kpelykh.docker.client.model.Ports;
 import com.kpelykh.docker.client.model.SearchItem;
-import com.kpelykh.docker.client.model.Version;
 
 /**
  * Unit test for DockerClient.
@@ -133,32 +130,6 @@ public class DockerClientTest extends AbstractDockerClientTest {
      * ## CONTAINER TESTS ##
      * #####################
      */
-
-    @Test
-    public void shouldBeAbleToAttachToContainerAndGetLogs() throws DockerException, IOException {
-
-        String snippet = "hello world";
-
-        ContainerConfig containerConfig = new ContainerConfig();
-        containerConfig.setImage("busybox");
-        containerConfig.setCmd(new String[] {"/bin/echo", snippet});
-
-        ContainerCreateResponse container = dockerClient.createContainer(containerConfig);
-
-        dockerClient.startContainer(container.getId());
-        tmpContainers.add(container.getId());
-
-        int exitCode = dockerClient.waitContainer(container.getId()).getStatusCode();
-
-        assertThat(exitCode, equalTo(0));
-
-        InputStream response = dockerClient.logContainer(container.getId());
-
-        String fullLog = IOUtils.toString(response);
-
-        LOG.info("Container log: {}", fullLog);
-//        assertThat(fullLog, endsWith(snippet));
-    }
 
     //This test doesn't work in Ubuntu 12.04 due to
     //Error mounting '/dev/mapper/docker-8:5-...
