@@ -2,6 +2,7 @@ package com.kpelykh.docker.client.test;
 
 import static ch.lambdaj.Lambda.filter;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
@@ -17,6 +18,7 @@ import java.util.List;
 
 import org.apache.commons.io.IOUtils;
 import org.hamcrest.Matcher;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 
 import com.kpelykh.docker.client.DockerException;
@@ -159,7 +161,7 @@ public class DockerContainersEndpointsTest extends AbstractDockerClientTest {
         String fullLog = IOUtils.toString(response);
 
         LOG.info("Container log: {}", fullLog);
-//        assertThat(fullLog, endsWith(snippet));
+        assertThat(fullLog, containsString(snippet));
     }
 
 	private ContainerCreateResponse createBusybox() throws DockerException {
