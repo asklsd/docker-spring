@@ -19,7 +19,7 @@ import com.kpelykh.docker.client.model.Version;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = { "SimpleServiceTest-context.xml" })
-public class DockerMiscOperationsTest {
+public class DockerMiscEndpointsTest {
 
 	public static final Logger LOG = LoggerFactory.getLogger(DockerClientTest.class);
 
