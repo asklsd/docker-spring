@@ -168,21 +168,6 @@ public class DockerClientTest extends AbstractDockerClientTest {
      */
 
     @Test
-    public void shouldBeAbleToCreateNewContainer() throws DockerException {
-        ContainerConfig containerConfig = new ContainerConfig();
-        containerConfig.setImage("busybox");
-        containerConfig.setCmd(new String[]{"true"});
-
-        ContainerCreateResponse container = dockerClient.createContainer(containerConfig);
-
-        LOG.info("Created container {}", container.toString());
-
-        assertThat(container.getId(), not(isEmptyString()));
-
-        tmpContainers.add(container.getId());
-    }
-
-    @Test
     public void shouldBeAbleToStartAndInspectFreshlyCreatedContainer() throws DockerException {
 
         ContainerConfig containerConfig = new ContainerConfig();

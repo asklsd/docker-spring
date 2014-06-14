@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
@@ -28,29 +27,26 @@ public abstract class AbstractDockerClientTest {
 	public TestName testName = new TestName();
 
 	@Autowired
-	protected static DockerClient dockerClient;
+	protected DockerClient dockerClient;
 
 	protected List<String> tmpImgs;
 	protected List<String> tmpContainers;
 
-	@BeforeClass
-	public static void beforeClass() throws DockerException {
+	@Before
+	public void beforeMethod() throws DockerException {
 		LOG.info("======================= BEFORETEST =======================");
 		// TODO - flu support system property for testing
 		// String url = System.getProperty("docker.url",
 		// "http://localhost:4243");
 		// TODO - flu support getting the live url form dockerClient
 		// LOG.info("Connecting to Docker server at " + url);
-
+		
 		// TODO - flu support logging of response stream
 		// logResponseStream(dockerClient.pull("busybox"));
 		dockerClient.pull("busybox");
 		// TODO - flu add test that asserts autowiring of dockerClient
 		LOG.info("======================= END OF BEFORETEST =======================\n\n");
-	}
 
-	@Before
-	public void beforeMethod() {
 		tmpContainers = new ArrayList<String>();
 		tmpImgs = new ArrayList<String>();
 		LOG.info("################################## STARTING {} ##################################", testName);

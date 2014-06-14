@@ -262,8 +262,17 @@ public class DockerClient {
 		if (containerName != null) {
 			containerParameter = "?name=" + containerName;
 		}
-		String response = restTemplate.postForObject(dockerDeamonUrl + "/containers/create" + containerParameter, requestEntity,
-				String.class);
+		String response = null;
+		try {
+			response = restTemplate.postForObject(dockerDeamonUrl + "/containers/create" + containerParameter, requestEntity,
+					String.class);
+		} catch (HttpClientErrorException cause) {
+			if (cause.getStatusCode() == HttpStatus.NOT_FOUND) {
+				throw new NotFoundException("Image '" + containerConfig.getImage() + "' not found.", cause);
+			} else {
+				throw new DockerException(cause);
+			}
+		}
 		try {
 			return new ObjectMapper().readValue(response, ContainerCreateResponse.class);
 		} catch (JsonParseException e) {
