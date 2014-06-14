@@ -49,7 +49,7 @@ public abstract class AbstractDockerClientTest {
 
 		tmpContainers = new ArrayList<String>();
 		tmpImgs = new ArrayList<String>();
-		LOG.info("################################## STARTING {} ##################################", testName);
+		LOG.info("################################## STARTING {} ##################################", testName.getMethodName());
 	}
 
 	@After
@@ -74,7 +74,7 @@ public abstract class AbstractDockerClientTest {
 			}
 		}
 
-		LOG.info("################################## END OF {} ##################################\n", testName);
+		LOG.info("################################## END OF {} ##################################\n", testName.getMethodName());
 	}
 
 	// protected String logResponseStream(ClientResponse response) {
