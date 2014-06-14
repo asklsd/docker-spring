@@ -1,6 +1,7 @@
 package com.kpelykh.docker.client.test;
 
 import static ch.lambdaj.Lambda.filter;
+import static ch.lambdaj.Lambda.selectUnique;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -18,11 +19,11 @@ import java.util.List;
 
 import org.apache.commons.io.IOUtils;
 import org.hamcrest.Matcher;
-import org.hamcrest.Matchers;
 import org.junit.Test;
 
 import com.kpelykh.docker.client.DockerException;
 import com.kpelykh.docker.client.NotFoundException;
+import com.kpelykh.docker.client.model.ChangeLog;
 import com.kpelykh.docker.client.model.Container;
 import com.kpelykh.docker.client.model.ContainerConfig;
 import com.kpelykh.docker.client.model.ContainerCreateResponse;
@@ -162,6 +163,23 @@ public class DockerContainersEndpointsTest extends AbstractDockerClientTest {
 
         LOG.info("Container log: {}", fullLog);
         assertThat(fullLog, containsString(snippet));
+    }
+
+    @Test
+    public void shouldBeAbleToDetectCreatedTestFileInStoppedContainer() throws DockerException {
+
+    	ContainerCreateResponse busyboxContainer = createBusybox(new String[] {"touch", "/test"});
+
+        dockerClient.startContainer(busyboxContainer.getId());
+        dockerClient.waitContainer(busyboxContainer.getId()).getStatusCode();
+
+        List<ChangeLog> filesystemDiff = dockerClient.containterDiff(busyboxContainer.getId());
+        LOG.info("Container diff: {}", filesystemDiff.toString());
+
+        assertThat(filesystemDiff.size(), equalTo(1));
+        ChangeLog testChangeLog = selectUnique(filesystemDiff, hasField("path", equalTo("/test")));
+        assertThat(testChangeLog, hasField("path", equalTo("/test")));
+        assertThat(testChangeLog, hasField("kind", equalTo(1)));
     }
 
 	private ContainerCreateResponse createBusybox() throws DockerException {

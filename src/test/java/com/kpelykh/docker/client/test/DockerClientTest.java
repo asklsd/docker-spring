@@ -1,7 +1,6 @@
 package com.kpelykh.docker.client.test;
 
 import static ch.lambdaj.Lambda.filter;
-import static ch.lambdaj.Lambda.selectUnique;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -30,7 +29,6 @@ import org.hamcrest.Matcher;
 import org.junit.Test;
 
 import com.kpelykh.docker.client.DockerException;
-import com.kpelykh.docker.client.model.ChangeLog;
 import com.kpelykh.docker.client.model.CommitConfig;
 import com.kpelykh.docker.client.model.Container;
 import com.kpelykh.docker.client.model.ContainerConfig;
@@ -130,36 +128,6 @@ public class DockerClientTest extends AbstractDockerClientTest {
      * ## CONTAINER TESTS ##
      * #####################
      */
-
-    //This test doesn't work in Ubuntu 12.04 due to
-    //Error mounting '/dev/mapper/docker-8:5-...
-    //ref: https://github.com/dotcloud/docker/issues/4036
-
-    @Test
-    public void shouldBeAbleToDetectCreatedTestFile() throws DockerException {
-        ContainerConfig containerConfig = new ContainerConfig();
-        containerConfig.setImage("busybox");
-        containerConfig.setCmd(new String[] {"touch", "/test"});
-
-        ContainerCreateResponse container = dockerClient.createContainer(containerConfig);
-        tmpContainers.add(container.getId());
-
-        LOG.info("Created container: {}", container.toString());
-        assertThat(container.getId(), not(isEmptyString()));
-        dockerClient.startContainer(container.getId());
-        boolean add = tmpContainers.add(container.getId());
-        int exitCode = dockerClient.waitContainer(container.getId()).getStatusCode();
-        assertThat(exitCode, equalTo(0));
-
-        List filesystemDiff = dockerClient.containterDiff(container.getId());
-        LOG.info("Container DIFF: {}", filesystemDiff.toString());
-
-        assertThat(filesystemDiff.size(), equalTo(1));
-        ChangeLog testChangeLog = selectUnique(filesystemDiff, hasField("path", equalTo("/test")));
-
-        assertThat(testChangeLog, hasField("path", equalTo("/test")));
-        assertThat(testChangeLog, hasField("kind", equalTo(1)));
-    }
 
     @Test
     public void testStopContainer() throws DockerException {
