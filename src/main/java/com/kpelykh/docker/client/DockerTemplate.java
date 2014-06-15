@@ -149,4 +149,13 @@ public class DockerTemplate implements DockerOperations {
 		}
 	}
 
+	@Override
+	public String getServerVersion() {
+		try {
+			return dockerClient.version().getVersion();
+		} catch (DockerException e) {
+			throw new RuntimeException("Failed to query the docker daemon.");
+		}
+	}
+
 }

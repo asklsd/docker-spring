@@ -33,4 +33,6 @@ public interface DockerOperations {
 
 	boolean containerExists(String containerName);
 
+	String getServerVersion();
+
 }
