@@ -17,4 +17,18 @@
 
 	<osgi:service ref="dockerTemplate" interface="com.kpelykh.docker.client.DockerOperations" />
 
+	<bean id="dockerCommandProvider" class="com.kpelykh.docker.internal.DockerCommandProvider" autowire="constructor" />
+	<osgi:service ref="dockerCommandProvider" auto-export="all-classes">
+		<osgi:service-properties>
+			<entry key="osgi.command.scope">
+				<value>docker</value>
+			</entry>
+			<entry key="osgi.command.function">
+				<array value-type="java.lang.String">
+					<value>info</value>
+					<value>version</value>
+				</array>
+			</entry>
+		</osgi:service-properties>
+	</osgi:service>
 </beans>
