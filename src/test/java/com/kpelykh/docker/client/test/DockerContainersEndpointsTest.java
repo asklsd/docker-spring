@@ -250,22 +250,6 @@ public class DockerContainersEndpointsTest extends AbstractDockerClientTest {
         List containers2 = dockerClient.listContainers(true);
         Matcher matcher = not(hasItem(hasField("id", startsWith(container.getId()))));
         assertThat(containers2, matcher);
-
     }
-
-	private ContainerCreateResponse createBusybox() throws DockerException {
-		return createBusybox("true");
-	}
-
-	private ContainerCreateResponse createBusybox(String... cmd) throws DockerException {
-		ContainerConfig containerConfig = new ContainerConfig();
-		containerConfig.setImage("busybox");
-		containerConfig.setCmd(cmd);
-
-		ContainerCreateResponse container = dockerClient.createContainer(containerConfig);
-		tmpContainers.add(container.getId());
-		LOG.info("Created container {} with id {}", container, container.getId());
-		return container;
-	}
 
 }

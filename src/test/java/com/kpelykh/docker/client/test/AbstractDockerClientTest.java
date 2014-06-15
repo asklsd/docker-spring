@@ -3,6 +3,7 @@ package com.kpelykh.docker.client.test;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -17,6 +18,8 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import com.kpelykh.docker.client.DockerClient;
 import com.kpelykh.docker.client.DockerException;
 import com.kpelykh.docker.client.NotFoundException;
+import com.kpelykh.docker.client.model.ContainerConfig;
+import com.kpelykh.docker.client.model.ContainerCreateResponse;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = { "SimpleServiceTest-context.xml" })
@@ -86,6 +89,29 @@ public abstract class AbstractDockerClientTest {
 		}
 
 		LOG.info("################################## END OF {} ##################################\n", testName.getMethodName());
+	}
+
+	protected ContainerCreateResponse createBusybox() throws DockerException {
+		return createBusybox("true");
+	}
+
+	protected ContainerCreateResponse createBusybox(String... cmd) throws DockerException {
+		ContainerConfig containerConfig = new ContainerConfig();
+		containerConfig.setImage("busybox");
+		containerConfig.setCmd(cmd);
+	
+		ContainerCreateResponse container = dockerClient.createContainer(containerConfig);
+		tmpContainers.add(container.getId());
+		LOG.info("Created container {} with id {}", container, container.getId());
+		return container;
+	}
+
+	protected String extractImageId(String fullLog) {
+		String imageId = StringUtils.substringAfterLast(fullLog, "Successfully built ").trim();
+	    System.out.println(imageId);
+	    imageId = org.springframework.util.StringUtils.deleteAny(imageId, "\\n\"}");
+	    System.out.println(imageId);
+		return imageId;
 	}
 
 	// protected String logResponseStream(ClientResponse response) {

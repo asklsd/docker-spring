@@ -10,6 +10,7 @@ import static org.hamcrest.Matchers.isEmptyString;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertThat;
 import static org.testinfected.hamcrest.jpa.HasFieldWithValue.hasField;
 
@@ -21,6 +22,8 @@ import org.junit.Test;
 
 import com.kpelykh.docker.client.DockerException;
 import com.kpelykh.docker.client.NotFoundException;
+import com.kpelykh.docker.client.model.CommitConfig;
+import com.kpelykh.docker.client.model.ContainerCreateResponse;
 import com.kpelykh.docker.client.model.Image;
 import com.kpelykh.docker.client.model.ImageInspectResponse;
 import com.kpelykh.docker.client.model.Info;
@@ -86,11 +89,36 @@ public class DockerImagesEndpointsTest extends AbstractDockerClientTest {
 
     @Test
 	public void shouldBeAbleToInspectAnImage() throws Exception {
+
 		ImageInspectResponse imageInspectResponse = dockerClient.inspectImage("busybox");
 		LOG.info("Image Inspect: {}", imageInspectResponse.toString());
 
 		assertThat(imageInspectResponse.getAuthor(), containsString("Jérôme Petazzoni"));
 	}
+
+	@Test
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+    public void shouldBeAbleToRemoveCommittedImage() throws DockerException, InterruptedException {
+
+		ContainerCreateResponse busyboxContainer = createBusybox("touch", "/test");
+        dockerClient.startContainer(busyboxContainer.getId());
+
+        LOG.info("Committing container {}", busyboxContainer.toString());
+        String imageId = dockerClient.commit(new CommitConfig(busyboxContainer.getId()));
+        tmpImgs.add(imageId);
+
+        dockerClient.stopContainer(busyboxContainer.getId());
+        dockerClient.kill(busyboxContainer.getId());
+        dockerClient.removeContainer(busyboxContainer.getId());
+        tmpContainers.remove(busyboxContainer.getId());
+
+        dockerClient.removeImage(imageId);
+        tmpImgs.remove(imageId);
+
+        List containers = dockerClient.listContainers(true);
+        Matcher matcher = not(hasItem(hasField("id", startsWith(imageId))));
+        assertThat(containers, matcher);
+    }
 
     @SuppressWarnings("unchecked")
 	@Test
