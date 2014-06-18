@@ -66,7 +66,7 @@ public class DockerTemplate implements DockerOperations {
 			LOG.info("Create container finished with: {}", response);
 			return response.getId();
 		} catch (DockerException e) {
-			throw new RuntimeException("Failed to run new container.", e);
+			throw new RuntimeException("Failed to create new container.", e);
 		}
 	}
 
