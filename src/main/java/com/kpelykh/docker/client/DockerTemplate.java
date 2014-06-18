@@ -32,7 +32,7 @@ public class DockerTemplate implements DockerOperations {
 
 	@Override
 	public String build(String tag, String dockerFolderName) {
-		LOG.info("Building new image '{}' from direcotry '{}'", tag, dockerFolderName);
+		LOG.info("Building new image '{}' from directory '{}'", tag, dockerFolderName);
 		File dockerFolder = new File(dockerFolderName);
 		try {
 			InputStream buildOutput = this.dockerClient.build(dockerFolder, tag);
