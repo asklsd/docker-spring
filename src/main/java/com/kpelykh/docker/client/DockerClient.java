@@ -456,7 +456,7 @@ public class DockerClient {
 	}
 
 	public InputStream build(File dockerFolder, String tag) throws DockerException {
-		return this.build(dockerFolder, null, false);
+		return this.build(dockerFolder, tag, false);
 	}
 
 	private static boolean isFileResource(String resource) {
