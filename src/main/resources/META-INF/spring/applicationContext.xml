@@ -27,6 +27,9 @@
 				<array value-type="java.lang.String">
 					<value>info</value>
 					<value>version</value>
+					<value>build</value>
+					<value>create</value>
+					<value>start</value>
 				</array>
 			</entry>
 		</osgi:service-properties>

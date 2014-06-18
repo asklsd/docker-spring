@@ -15,10 +15,10 @@ public interface DockerOperations {
 	 * Create a new container.
 	 * @param imageTag to use.
 	 * @param containerName to use.
-	 * @param containerPort to expose.
+	 * @param containerPorts to expose.
 	 * @return The id of the created container.
 	 */
-	String createContainer(String imageTag, String containerName, int containerPort);
+	String createContainer(String imageTag, String containerName, int... exposedPorts);
 
 	/**
 	 * Start a container.

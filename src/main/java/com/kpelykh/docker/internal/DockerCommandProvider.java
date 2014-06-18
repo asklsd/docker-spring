@@ -2,17 +2,28 @@ package com.kpelykh.docker.internal;
 
 import static java.lang.System.out;
 
+import java.io.File;
+import java.io.InputStream;
+import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.commons.lang.StringEscapeUtils;
+
 import com.kpelykh.docker.client.DockerClient;
+import com.kpelykh.docker.client.DockerTemplate;
 import com.kpelykh.docker.client.model.Info;
 import com.kpelykh.docker.client.model.Version;
 
 public class DockerCommandProvider {
 
 	private DockerClient dockerClient;
+	private DockerTemplate dockerTemplate;
 
-	public DockerCommandProvider(DockerClient dockerClient) {
+	public DockerCommandProvider(DockerClient dockerClient, DockerTemplate dockerTemplate) {
 		super();
 		this.dockerClient = dockerClient;
+		this.dockerTemplate = dockerTemplate;
 	}
 
 	public void info() {
@@ -37,4 +48,32 @@ public class DockerCommandProvider {
 		out.println("Git commit (server): " + version.getGitCommit());
 	}
 
+	public void build(String tag, String dockerFolderName) {
+		File dockerFolder = new File(dockerFolderName);
+		InputStream buildOutput = this.dockerClient.build(dockerFolder, tag);
+
+		Pattern pattern = Pattern.compile(":\"(.*)\n\"}");
+
+		Scanner scan = new Scanner(buildOutput, "UTF-8");
+		while (scan.hasNextLine()) {
+			String nextLine = scan.nextLine();
+			String plain = StringEscapeUtils.unescapeJavaScript(nextLine);
+			output(pattern, plain);
+		}
+	}
+
+	public void create(String imageTag, String containerName) {
+		this.dockerTemplate.createContainer(imageTag, containerName);
+	}
+
+	public void start(String containerId, int hostPort, int containerPort) {
+		this.dockerTemplate.start(containerId, hostPort, containerPort);
+	}
+
+	private void output(Pattern pattern, String nextLine) {
+		Matcher matcher = pattern.matcher(nextLine);
+		if (matcher.find()) {
+			out.println(matcher.group(1));
+		}
+	}
 }

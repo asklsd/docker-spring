@@ -55,12 +55,14 @@ public class DockerTemplate implements DockerOperations {
 	}
 
 	@Override
-	public String createContainer(String imageTag, String containerName, int containerPort) {
+	public String createContainer(String imageTag, String containerName, int... exposedPorts) {
 		LOG.info("Creating new container from image '{}'...", imageTag);
 		ContainerConfig containerConfig = new ContainerConfig();
 		containerConfig.setHostName("localhost");
 		containerConfig.setImage(imageTag);
-		containerConfig.getExposedPorts().put(createPortBindingKey(containerPort), null);
+		for (int exposedPort : exposedPorts) {
+			containerConfig.getExposedPorts().put(createPortBindingKey(exposedPort), null);
+		}
 		try {
 			ContainerCreateResponse response = dockerClient.createContainer(containerConfig, containerName);
 			LOG.info("Create container finished with: {}", response);
@@ -76,9 +78,7 @@ public class DockerTemplate implements DockerOperations {
 		try {
 			HostConfig hostConfig = new HostConfig();
 			Ports ports = hostConfig.getPortBindings();
-			System.out.println(ports);
 			ports.addPort(new Port("tcp", Integer.toString(containerPort), "0.0.0.0", Integer.toString(hostPort)));
-			System.out.println(ports);
 			LOG.debug("Using host config: {}", hostConfig);
 
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -118,10 +118,10 @@ public class DockerTemplate implements DockerOperations {
 		try {
 			response = dockerClient.inspectContainer(containerName);
 			return response.getState().running;
-		} catch (DockerException e) {
-			throw new RuntimeException("Failed to query the docker daemon.");
-		} catch (HttpClientErrorException e) {
+		} catch (NotFoundException e) {
 			throw new IllegalArgumentException("Container '" + containerName + "' does not exist.");
+		} catch (DockerException e) {
+			throw new RuntimeException("Failed to query the docker daemon.", e);
 		}
 	}
 
