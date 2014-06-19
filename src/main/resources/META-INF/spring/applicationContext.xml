@@ -30,6 +30,7 @@
 					<value>build</value>
 					<value>create</value>
 					<value>start</value>
+					<value>ps</value>
 				</array>
 			</entry>
 		</osgi:service-properties>
